@@ -1,0 +1,30 @@
+exporter_port: $EXPORTER_PORT|9090 # the port that exposes cost metrics
+polling_interval_seconds: $POLLING_INTERVAL_SECONDS|28800 # by default it is 8 hours because for daily cost, AWS only updates the data once per day
+
+aws_access_key: $AWS_ACCESS_KEY # for prod deployment, DO NOT put the actual value here
+aws_access_secret: $AWS_ACCESS_SECRET # for prod deployment, DO NOT put the actual value here
+aws_assumed_role_name: phoenix-service-cloud-cost-role
+
+group_by:
+  enabled: true
+  # Cost data can be groupped using up to two different groups: DIMENSION, TAG, COST_CATEGORY.
+  # ref: https://docs.aws.amazon.com/aws-cost-management/latest/APIReference/API_GetCostAndUsageWithResources.html
+  groups:
+    - type: DIMENSION
+      key: SERVICE
+      label_name: ServiceName
+    - type: DIMENSION
+      key: REGION
+      label_name: RegionName
+  merge_minor_cost:
+    # if this is enabled, minor cost that is below the threshold will be merged into one group
+    enabled: false
+    threshold: 10
+    tag_value: other
+
+target_aws_accounts:
+  # here defines a list of target AWS accounts
+  # it should be guaranteed that all the AWS accounts have the same set of keys (in this example they are Publisher, ProjectName, and EnvironmentName)
+  - Publisher: 123456789012
+    ProjectName: myproject
+    EnvironmentName: dev

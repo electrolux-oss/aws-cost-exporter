@@ -1,0 +1,4 @@
+boto3==1.21.23
+prometheus-client==0.17.0
+envyaml==1.10.211231
+python-dateutil==2.8.2
