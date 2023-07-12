@@ -2,21 +2,25 @@
 # -*- coding:utf-8 -*-
 # Filename: exporter.py
 
-import os, sys, argparse
+import os
+import sys
+import argparse
 from app.exporter import MetricExporter
 from envyaml import EnvYAML
 from prometheus_client import start_http_server
 import logging
 
+
 def get_configs():
     parser = argparse.ArgumentParser(
         description="AWS Cost Exporter, exposing AWS cost data as Prometheus metrics.")
     parser.add_argument("-c", "--config", required=True,
-        help="The config file (exporter_config.yaml) for the exporter")
+                        help="The config file (exporter_config.yaml) for the exporter")
     args = parser.parse_args()
 
     if (not os.path.exists(args.config)):
-        logging.error("AWS Cost Exporter config file does not exist, or it is not a file!")
+        logging.error(
+            "AWS Cost Exporter config file does not exist, or it is not a file!")
         sys.exit(1)
 
     config = EnvYAML(args.config)
@@ -24,11 +28,13 @@ def get_configs():
     # config validation
     if config["group_by.enabled"]:
         if len(config["group_by.groups"]) < 1 or len(config["group_by.groups"]) > 2:
-            logging.error("If group_by is enabled, there should be at leaest one group, and at most two groups!")
+            logging.error(
+                "If group_by is enabled, there should be at leaest one group, and at most two groups!")
             sys.exit(1)
 
     if len(config["target_aws_accounts"]) == 0:
-        logging.error("There should be at leaest one target AWS accounts defined in the config!")
+        logging.error(
+            "There should be at leaest one target AWS accounts defined in the config!")
         sys.exit(1)
 
     labels = config["target_aws_accounts"][0].keys()
@@ -39,7 +45,8 @@ def get_configs():
 
     for i in range(1, len(config["target_aws_accounts"])):
         if labels != config["target_aws_accounts"][i].keys():
-            logging.error("All the target AWS accounts should have the same set of keys (labels)!")
+            logging.error(
+                "All the target AWS accounts should have the same set of keys (labels)!")
             sys.exit(1)
 
     return config

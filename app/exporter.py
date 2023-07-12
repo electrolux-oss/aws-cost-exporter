@@ -2,7 +2,8 @@
 # -*- coding:utf-8 -*-
 # Filename: exporter.py
 
-import time, boto3
+import time
+import boto3
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 from prometheus_client import Gauge
@@ -17,8 +18,10 @@ class MetricExporter:
         self.aws_access_secret = aws_access_secret
         self.aws_assumed_role_name = aws_assumed_role_name
         self.group_by = group_by
-        self.labels = set(targets[0].keys()) # we have verified that there is at least one target
-        self.labels.add("ChargeType") # for now we only support exporting one type of cost (Usage)
+        # we have verified that there is at least one target
+        self.labels = set(targets[0].keys())
+        # for now we only support exporting one type of cost (Usage)
+        self.labels.add("ChargeType")
         if group_by["enabled"]:
             for group in group_by["groups"]:
                 self.labels.add(group["label_name"])
@@ -76,7 +79,8 @@ class MetricExporter:
 
     def fetch(self):
         for aws_account in self.targets:
-            logging.info("querying cost data for aws account %s"%aws_account["Publisher"])
+            logging.info("querying cost data for aws account %s" %
+                         aws_account["Publisher"])
             aws_credentials = self.get_aws_account_session(
                 aws_account["Publisher"])
             aws_client = boto3.client(
@@ -86,16 +90,19 @@ class MetricExporter:
                 aws_session_token=aws_credentials["SessionToken"],
                 region_name="us-east-1"
             )
-            cost_response = self.query_aws_cost_explorer(aws_client, self.group_by)
+            cost_response = self.query_aws_cost_explorer(
+                aws_client, self.group_by)
 
             for result in cost_response:
                 if not self.group_by["enabled"]:
                     cost = float(result["Total"]["UnblendedCost"]["Amount"])
-                    self.aws_cost.labels(**aws_account, ChargeType="Usage").set(cost)
+                    self.aws_cost.labels(
+                        **aws_account, ChargeType="Usage").set(cost)
                 else:
                     merged_minor_cost = 0
                     for item in result["Groups"]:
-                        cost = float(item["Metrics"]["UnblendedCost"]["Amount"])
+                        cost = float(item["Metrics"]
+                                     ["UnblendedCost"]["Amount"])
 
                         group_key_values = dict()
                         for i in range(len(self.group_by["groups"])):
@@ -103,15 +110,20 @@ class MetricExporter:
                                 value = item["Keys"][i].split("$")[1]
                             else:
                                 value = item["Keys"][i]
-                            group_key_values.update({self.group_by["groups"][i]["label_name"]: value})
+                            group_key_values.update(
+                                {self.group_by["groups"][i]["label_name"]: value})
 
-                        if self.group_by["merge_minor_cost"]["enabled"] and cost < self.group_by["merge_minor_cost"]["threshold"]:
+                        if self.group_by["merge_minor_cost"]["enabled"] and \
+                                cost < self.group_by["merge_minor_cost"]["threshold"]:
                             merged_minor_cost += cost
                         else:
-                            self.aws_cost.labels(**aws_account, **group_key_values, ChargeType="Usage").set(cost)
+                            self.aws_cost.labels(
+                                **aws_account, **group_key_values, ChargeType="Usage").set(cost)
 
                     if merged_minor_cost > 0:
                         group_key_values = dict()
                         for i in range(len(self.group_by["groups"])):
-                            group_key_values.update({self.group_by["groups"][i]["label_name"]: self.group_by["merge_minor_cost"]["tag_value"]})
-                        self.aws_cost.labels(**aws_account, **group_key_values, ChargeType="Usage").set(merged_minor_cost)
+                            group_key_values.update(
+                                {self.group_by["groups"][i]["label_name"]: self.group_by["merge_minor_cost"]["tag_value"]})
+                        self.aws_cost.labels(
+                            **aws_account, **group_key_values, ChargeType="Usage").set(merged_minor_cost)
