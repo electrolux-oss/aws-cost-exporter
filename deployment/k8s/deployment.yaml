@@ -24,7 +24,7 @@ spec:
     spec:
       containers:
         - name: aws-cost-exporter
-          image: "opensourceelectrolux/finops-aws-cost-exporter:v1.0.0"
+          image: "opensourceelectrolux/aws-cost-exporter:v1.0.0"
           command: [ "python", "main.py", "-c", "/exporter_config.yaml" ]
           imagePullPolicy: Always
           env:
