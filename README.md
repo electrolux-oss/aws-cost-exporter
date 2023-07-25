@@ -1,4 +1,4 @@
-# AWS Cost Metrics Exporter
+# AWS Cost Exporter
 
 Cloud providers like AWS and Azure usually provide cost management portals, dashboards, and APIs for their own products. If a user has a multi-cloud environment, she needs to check the cost information in different places.
 
@@ -10,9 +10,9 @@ AWS Cost Metrics Exporter fetches cost data from a list of AWS accounts, each of
 
 ![aws-cost-exporter-design](doc/images/aws-cost-exporter-design.png)
 
-## Setup AWS IAM User, Role and Policy
+## Setup AWS IAM User, Role, and Policy
 
-Note that if there is a list of AWS accounts for cost data collection, only **ONE** user needs to be created. This user is usually created in the AWS account where the exporter is deployed to (an EKS cluster). This can be done from the AWS console - IAM portal or by terraform code.
+Note that if there is a list of AWS accounts for cost data collection, only **ONE** user needs to be created. This user is usually created in the AWS account where the exporter is deployed (an EKS cluster). This can be done from the AWS console - IAM portal or by terraform code.
 
 After creating the user, visit the security credentials tab and create an access key for it. The access key and secret key will be needed when deploying the exporter.
 
