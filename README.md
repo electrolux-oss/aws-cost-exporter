@@ -4,6 +4,20 @@ Cloud providers like AWS and Azure usually provide cost management portals, dash
 
 This AWS Cost Metrics Exporter helps users to fetch AWS cost information using AWS Cost Explorer APIs and exposes them as standard Prometheus metrics. This enables users to have cost-related metrics present in the same place where their business metrics are. The design also makes it possible to collect cost data from different providers and design one single dashboard for all the costs.
 
+## Sample Output
+
+```
+# HELP aws_daily_cost_usd Daily cost of an AWS account in USD
+# TYPE aws_daily_cost_usd gauge
+aws_daily_cost_usd{ChargeType="Usage",EnvironmentName="sandbox",ProjectName="myproject",Publisher="<aws_account_1>",RegionName="eu-central-1"} 10.1827240691
+aws_daily_cost_usd{ChargeType="Usage",EnvironmentName="sandbox",ProjectName="myproject",Publisher="<aws_account_1>",RegionName="other"} 4.258201088100001
+aws_daily_cost_usd{ChargeType="Usage",EnvironmentName="prod",ProjectName="myproject",Publisher="<aws_account_2>",RegionName="eu-central-1"} 68.6121380948
+aws_daily_cost_usd{ChargeType="Usage",EnvironmentName="prod",ProjectName="myproject",Publisher="<aws_account_2>",RegionName="other"} 2.6191806712
+...
+```
+
+*ps: As the metric name indicate, the metric shows the daily costs in USD. `Daily` is based a fixed 24h time window, from UTC 00:00 to UTC 24:00. `EnvironmentName` and `ProjectName` are the custom labels that can be configured. `RegionName` is a label based on `group_by` configuration.*
+
 ## How Does This Work
 
 AWS Cost Metrics Exporter fetches cost data from a list of AWS accounts, each of which provides a necessary IAM role for the exporter. It regularly queries the AWS [GetCostAndUsage](https://docs.aws.amazon.com/aws-cost-management/latest/APIReference/API_GetCostAndUsage.html) to get the whole AWS account's cost. It is configurable to have different queries, such as group by services and tags, merge minor cost to one single category, etc. The following figure describes how AWS Cost Metrics Exporter works.
@@ -61,7 +75,7 @@ Modify the `exporter_config.yaml` file first, then use one of the following meth
 ### Docker
 
 ```
-docker run --rm -v ./exporter_config.yaml:/app/exporter_config.yaml -p 9090:9090 -e AWS_ACCESS_KEY=${AWS_ACCESS_KEY} -e AWS_ACCESS_SECRET=${AWS_ACCESS_SECRET} opensourceelectrolux/aws-cost-exporter:v1.0.0
+docker run --rm -v ./exporter_config.yaml:/app/exporter_config.yaml -p 9090:9090 -e AWS_ACCESS_KEY=${AWS_ACCESS_KEY} -e AWS_ACCESS_SECRET=${AWS_ACCESS_SECRET} opensourceelectrolux/aws-cost-exporter:v1.0.1
 ```
 
 ### Kubernetes
