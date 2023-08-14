@@ -25,8 +25,8 @@ class MetricExporter:
         if group_by["enabled"]:
             for group in group_by["groups"]:
                 self.labels.add(group["label_name"])
-        self.aws_cost = Gauge(
-            "aws_cost", "Daily cost of an AWS account", self.labels)
+        self.aws_daily_cost_usd = Gauge(
+            "aws_daily_cost_usd", "Daily cost of an AWS account in USD", self.labels)
 
     def run_metrics_loop(self):
         while True:
@@ -96,7 +96,7 @@ class MetricExporter:
             for result in cost_response:
                 if not self.group_by["enabled"]:
                     cost = float(result["Total"]["UnblendedCost"]["Amount"])
-                    self.aws_cost.labels(
+                    self.aws_daily_cost_usd.labels(
                         **aws_account, ChargeType="Usage").set(cost)
                 else:
                     merged_minor_cost = 0
@@ -117,7 +117,7 @@ class MetricExporter:
                                 cost < self.group_by["merge_minor_cost"]["threshold"]:
                             merged_minor_cost += cost
                         else:
-                            self.aws_cost.labels(
+                            self.aws_daily_cost_usd.labels(
                                 **aws_account, **group_key_values, ChargeType="Usage").set(cost)
 
                     if merged_minor_cost > 0:
@@ -125,5 +125,5 @@ class MetricExporter:
                         for i in range(len(self.group_by["groups"])):
                             group_key_values.update(
                                 {self.group_by["groups"][i]["label_name"]: self.group_by["merge_minor_cost"]["tag_value"]})
-                        self.aws_cost.labels(
+                        self.aws_daily_cost_usd.labels(
                             **aws_account, **group_key_values, ChargeType="Usage").set(merged_minor_cost)
