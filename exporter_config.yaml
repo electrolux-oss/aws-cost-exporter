@@ -1,5 +1,6 @@
 exporter_port: $EXPORTER_PORT|9090 # the port that exposes cost metrics
 polling_interval_seconds: $POLLING_INTERVAL_SECONDS|28800 # by default it is 8 hours because for daily cost, AWS only updates the data once per day
+metric_name: aws_daily_cost_usd # change the metric name if needed
 
 aws_access_key: $AWS_ACCESS_KEY # for prod deployment, DO NOT put the actual value here
 aws_access_secret: $AWS_ACCESS_SECRET # for prod deployment, DO NOT put the actual value here

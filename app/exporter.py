@@ -12,8 +12,9 @@ import logging
 
 
 class MetricExporter:
-    def __init__(self, polling_interval_seconds, aws_access_key, aws_access_secret, aws_assumed_role_name, group_by, targets):
+    def __init__(self, polling_interval_seconds, metric_name, aws_access_key, aws_access_secret, aws_assumed_role_name, group_by, targets):
         self.polling_interval_seconds = polling_interval_seconds
+        self.metric_name = metric_name
         self.targets = targets
         self.aws_access_key = aws_access_key
         self.aws_access_secret = aws_access_secret
@@ -27,7 +28,7 @@ class MetricExporter:
             for group in group_by["groups"]:
                 self.labels.add(group["label_name"])
         self.aws_daily_cost_usd = Gauge(
-            "aws_daily_cost_usd", "Daily cost of an AWS account in USD", self.labels)
+            self.metric_name, "Daily cost of an AWS account in USD", self.labels)
 
     def run_metrics_loop(self):
         while True:
