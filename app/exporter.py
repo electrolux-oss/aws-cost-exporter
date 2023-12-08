@@ -4,6 +4,7 @@
 
 import time
 import boto3
+import botocore
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 from prometheus_client import Gauge
@@ -30,7 +31,14 @@ class MetricExporter:
 
     def run_metrics_loop(self):
         while True:
-            self.fetch()
+            for aws_account in self.targets:
+                logging.info("querying cost data for aws account %s" %
+                            aws_account["Publisher"])
+                try:
+                    self.fetch(aws_account)
+                except Exception as e:
+                    logging.error(e)
+                    continue
             time.sleep(self.polling_interval_seconds)
 
     def get_aws_account_session(self, account_id):
@@ -77,53 +85,51 @@ class MetricExporter:
         )
         return response["ResultsByTime"]
 
-    def fetch(self):
-        for aws_account in self.targets:
-            logging.info("querying cost data for aws account %s" %
-                         aws_account["Publisher"])
-            aws_credentials = self.get_aws_account_session(
-                aws_account["Publisher"])
-            aws_client = boto3.client(
-                "ce",
-                aws_access_key_id=aws_credentials["AccessKeyId"],
-                aws_secret_access_key=aws_credentials["SecretAccessKey"],
-                aws_session_token=aws_credentials["SessionToken"],
-                region_name="us-east-1"
-            )
-            cost_response = self.query_aws_cost_explorer(
-                aws_client, self.group_by)
+    def fetch(self, aws_account):
+        aws_credentials = self.get_aws_account_session(
+            aws_account["Publisher"])
 
-            for result in cost_response:
-                if not self.group_by["enabled"]:
-                    cost = float(result["Total"]["UnblendedCost"]["Amount"])
-                    self.aws_daily_cost_usd.labels(
-                        **aws_account, ChargeType="Usage").set(cost)
-                else:
-                    merged_minor_cost = 0
-                    for item in result["Groups"]:
-                        cost = float(item["Metrics"]
-                                     ["UnblendedCost"]["Amount"])
+        aws_client = boto3.client(
+            "ce",
+            aws_access_key_id=aws_credentials["AccessKeyId"],
+            aws_secret_access_key=aws_credentials["SecretAccessKey"],
+            aws_session_token=aws_credentials["SessionToken"],
+            region_name="us-east-1"
+        )
+        cost_response = self.query_aws_cost_explorer(
+            aws_client, self.group_by)
 
-                        group_key_values = dict()
-                        for i in range(len(self.group_by["groups"])):
-                            if self.group_by["groups"][i]["type"] == "TAG":
-                                value = item["Keys"][i].split("$")[1]
-                            else:
-                                value = item["Keys"][i]
-                            group_key_values.update(
-                                {self.group_by["groups"][i]["label_name"]: value})
+        for result in cost_response:
+            if not self.group_by["enabled"]:
+                cost = float(result["Total"]["UnblendedCost"]["Amount"])
+                self.aws_daily_cost_usd.labels(
+                    **aws_account, ChargeType="Usage").set(cost)
+            else:
+                merged_minor_cost = 0
+                for item in result["Groups"]:
+                    cost = float(item["Metrics"]
+                                    ["UnblendedCost"]["Amount"])
 
-                        if self.group_by["merge_minor_cost"]["enabled"] and \
-                                cost < self.group_by["merge_minor_cost"]["threshold"]:
-                            merged_minor_cost += cost
+                    group_key_values = dict()
+                    for i in range(len(self.group_by["groups"])):
+                        if self.group_by["groups"][i]["type"] == "TAG":
+                            value = item["Keys"][i].split("$")[1]
                         else:
-                            self.aws_daily_cost_usd.labels(
-                                **aws_account, **group_key_values, ChargeType="Usage").set(cost)
+                            value = item["Keys"][i]
+                        group_key_values.update(
+                            {self.group_by["groups"][i]["label_name"]: value})
 
-                    if merged_minor_cost > 0:
-                        group_key_values = dict()
-                        for i in range(len(self.group_by["groups"])):
-                            group_key_values.update(
-                                {self.group_by["groups"][i]["label_name"]: self.group_by["merge_minor_cost"]["tag_value"]})
+                    if self.group_by["merge_minor_cost"]["enabled"] and \
+                            cost < self.group_by["merge_minor_cost"]["threshold"]:
+                        merged_minor_cost += cost
+                    else:
                         self.aws_daily_cost_usd.labels(
-                            **aws_account, **group_key_values, ChargeType="Usage").set(merged_minor_cost)
+                            **aws_account, **group_key_values, ChargeType="Usage").set(cost)
+
+                if merged_minor_cost > 0:
+                    group_key_values = dict()
+                    for i in range(len(self.group_by["groups"])):
+                        group_key_values.update(
+                            {self.group_by["groups"][i]["label_name"]: self.group_by["merge_minor_cost"]["tag_value"]})
+                    self.aws_daily_cost_usd.labels(
+                        **aws_account, **group_key_values, ChargeType="Usage").set(merged_minor_cost)
