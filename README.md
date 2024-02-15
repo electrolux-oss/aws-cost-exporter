@@ -4,6 +4,11 @@ Cloud providers like AWS and Azure usually provide cost management portals, dash
 
 This AWS Cost Metrics Exporter helps users to fetch AWS cost information using AWS Cost Explorer APIs and exposes them as standard Prometheus metrics. This enables users to have cost-related metrics present in the same place where their business metrics are. The design also makes it possible to collect cost data from different providers and design one single dashboard for all the costs.
 
+## Example of Dashboard on Grafana
+
+![dashboard-example](doc/images/aws-cost-overview-dashboard-example.png)
+*This is just an example with fake data that shows the idea of visualizing AWS cost metrics exported by this tool.*
+
 ## Sample Output
 
 ```
