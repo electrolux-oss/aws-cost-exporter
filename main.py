@@ -34,7 +34,7 @@ def get_configs():
 def validate_configs(config):
     if config["group_by.enabled"]:
         if len(config["group_by.groups"]) < 1 or len(config["group_by.groups"]) > 2:
-            logging.error("If group_by is enabled, there should be at leaest one group, and at most two groups!")
+            logging.error("If group_by is enabled, there should be at least one group, and at most two groups!")
             sys.exit(1)
         group_label_names = set()
         for group in config["group_by.groups"]:
@@ -45,12 +45,12 @@ def validate_configs(config):
                 group_label_names.add(group["label_name"])
 
     if len(config["target_aws_accounts"]) == 0:
-        logging.error("There should be at leaest one target AWS accounts defined in the config!")
+        logging.error("There should be at least one target AWS accounts defined in the config!")
         sys.exit(1)
 
     labels = config["target_aws_accounts"][0].keys()
     if group_label_names and (group_label_names & set(labels)):
-        logging.error("Some of label names in group_by are the same as AWS account labels!")
+        logging.error("Some label names in group_by are the same as AWS account labels!")
         sys.exit(1)
 
     if "Publisher" not in labels:
