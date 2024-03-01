@@ -10,6 +10,7 @@ group_by:
   enabled: true
   # Cost data can be groupped using up to two different groups: DIMENSION, TAG, COST_CATEGORY.
   # ref: https://docs.aws.amazon.com/aws-cost-management/latest/APIReference/API_GetCostAndUsageWithResources.html
+  # note: label_name should be unique, and different from the labes in target_aws_accounts
   groups:
     - type: DIMENSION
       key: SERVICE
