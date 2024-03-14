@@ -40,6 +40,9 @@ class MetricExporter:
 
     def run_metrics_loop(self):
         while True:
+            # every time we clear up all the existing labels before setting new ones
+            self.aws_daily_cost_usd .clear()
+
             for aws_account in self.targets:
                 logging.info("querying cost data for aws account %s" % aws_account["Publisher"])
                 try:
