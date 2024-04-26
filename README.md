@@ -7,7 +7,7 @@ This AWS Cost Metrics Exporter helps users to fetch AWS cost information using A
 ## Example of Dashboard on Grafana
 
 ![dashboard-example](doc/images/aws-cost-overview-dashboard-example.png)
-*This is just an example with fake data that shows the idea of visualizing AWS cost metrics exported by this tool.*
+_This is just an example with fake data that shows the idea of visualizing AWS cost metrics exported by this tool. You can find a simplified version of this dashboard in json [here](doc/aws-cost-overview-dashboard-example.json)._
 
 ## Sample Output
 
@@ -21,7 +21,7 @@ aws_daily_cost_usd{ChargeType="Usage",EnvironmentName="prod",ProjectName="myproj
 ...
 ```
 
-*ps: As the metric name indicate, the metric shows the daily costs in USD. `Daily` is based a fixed 24h time window, from UTC 00:00 to UTC 24:00. `EnvironmentName` and `ProjectName` are the custom labels that can be configured. `RegionName` is a label based on `group_by` configuration.*
+_ps: As the metric name indicate, the metric shows the daily costs in USD. `Daily` is based a fixed 24h time window, from UTC 00:00 to UTC 24:00. `EnvironmentName` and `ProjectName` are the custom labels that can be configured. `RegionName` is a label based on `group_by` configuration._
 
 ## How Does This Work
 
@@ -86,11 +86,13 @@ docker run --rm -v ./exporter_config.yaml:/app/exporter_config.yaml -p 9090:9090
 ### Kubernetes
 
 - Create Namespace
+
 ```
 kubectl create ns finops
 ```
 
 - Create Secret
+
 ```
 kubectl create secret generic aws-cost-exporter \
     --namespace=finops \
@@ -99,11 +101,13 @@ kubectl create secret generic aws-cost-exporter \
 ```
 
 - Create ConfigMap
+
 ```
 kubectl create configmap aws-cost-exporter-config --namespace finops --from-file=./exporter_config.yaml
 ```
 
 - Create Deployment
+
 ```
 kubectl create --namespace finops -f ./deployment/k8s/deployment.yaml
 ```
