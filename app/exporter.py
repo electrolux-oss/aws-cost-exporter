@@ -16,6 +16,7 @@ class MetricExporter:
         self,
         polling_interval_seconds,
         metric_name,
+        aws_auth_method,
         aws_access_key,
         aws_access_secret,
         aws_assumed_role_name,
@@ -25,6 +26,7 @@ class MetricExporter:
         self.polling_interval_seconds = polling_interval_seconds
         self.metric_name = metric_name
         self.targets = targets
+        self.aws_auth_method = aws_auth_method
         self.aws_access_key = aws_access_key
         self.aws_access_secret = aws_access_secret
         self.aws_assumed_role_name = aws_assumed_role_name
@@ -53,10 +55,13 @@ class MetricExporter:
             time.sleep(self.polling_interval_seconds)
 
     def get_aws_account_session(self, account_id):
-        sts_client = boto3.client(
-            "sts",
-            aws_access_key_id=self.aws_access_key,
-            aws_secret_access_key=self.aws_access_secret,
+        if self.aws_auth_method == "iam-role":
+            sts_client = boto3.client("sts")
+        else:
+            sts_client = boto3.client(
+                "sts",
+                aws_access_key_id=self.aws_access_key,
+                aws_secret_access_key=self.aws_access_secret,
         )
 
         assumed_role_object = sts_client.assume_role(
