@@ -73,6 +73,10 @@ Under the trust relationships tab, add the following policy to it (add the ARN o
 }
 ```
 
+Note thats is also possible to use the AWS-IAM-Role attached to the running EC2-Instance, see `aws_authentication.method` in exporter_config.yaml. Therefore it might be necessry to increase the instance's `httpPutResponseHopLimit`. e.g. via aws-cli
+
+`aws ec2 modify-instance-metadata-options --instance-id $INSTANCE_ID --http-put-response-hop-limit 3 --http-endpoint enabled`
+
 ## Deployment
 
 Modify the `exporter_config.yaml` file first, then use one of the following methods to run the exporter.
