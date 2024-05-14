@@ -27,7 +27,7 @@ def get_configs():
         logging.error("AWS Cost Exporter config file does not exist, or it is not a file!")
         sys.exit(1)
 
-    config = EnvYAML(args.config)
+    config = EnvYAML(args.config, strict=False)
     return config
 
 
@@ -43,6 +43,22 @@ def validate_configs(config):
                 sys.exit(1)
             else:
                 group_label_names.add(group["label_name"])
+
+    if config["aws_authentication.method"] == "iam-user":
+        if config["aws_authentication.access_key"] is None:
+            logging.error("Authentication via IAM-credentials configured, but no aws_access_key supplied")
+            sys.exit(1)
+        if config["aws_authentication.access_secret"] is None:
+            logging.error("Authentication via IAM-credentials configured, but no aws_access_secret supplied")
+            sys.exit(1)
+
+    if config["aws_authentication.method"] == "iam-role":
+        if config["aws_authentication.access_key"] is not None:
+            logging.error("Authentication via IAM-role is configured, do not configure access_key, aws-sts will probably prefer those credentials")
+            sys.exit(1)
+        if config["aws_authentication.access_secret"] is not None:
+            logging.error("Authentication via IAM-role is configured, do not configure access_secret, aws-sts will probably prefer those credentials")
+            sys.exit(1)
 
     if len(config["target_aws_accounts"]) == 0:
         logging.error("There should be at least one target AWS accounts defined in the config!")
@@ -62,14 +78,14 @@ def validate_configs(config):
             logging.error("All the target AWS accounts should have the same set of keys (labels)!")
             sys.exit(1)
 
-
 def main(config):
     app_metrics = MetricExporter(
         polling_interval_seconds=config["polling_interval_seconds"],
         metric_name=config["metric_name"],
-        aws_access_key=config["aws_access_key"],
-        aws_access_secret=config["aws_access_secret"],
-        aws_assumed_role_name=config["aws_assumed_role_name"],
+        aws_auth_method=config["aws_authentication.method"],
+        aws_access_key=config["aws_authentication.access_key"],
+        aws_access_secret=config["aws_authentication.access_secret"],
+        aws_assumed_role_name=config["aws_authentication.assumed_role_name"],
         group_by=config["group_by"],
         targets=config["target_aws_accounts"],
     )
