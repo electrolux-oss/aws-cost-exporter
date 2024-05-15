@@ -4,40 +4,23 @@ metadata:
   name: aws-cost-exporter
   labels:
     app.kubernetes.io/name: aws-cost-exporter
-    app.kubernetes.io/part-of: finops
-    app.kubernetes.io/component: backend
-    app.kubernetes.io/version: "v1.0.1"
-    app.kubernetes.io/language: python
 spec:
   replicas: 1
   selector:
     matchLabels:
       app.kubernetes.io/name: aws-cost-exporter
-      app.kubernetes.io/part-of: finops
-      app.kubernetes.io/component: backend
   template:
     metadata:
       labels:
         app.kubernetes.io/name: aws-cost-exporter
-        app.kubernetes.io/part-of: finops
-        app.kubernetes.io/component: backend
     spec:
+      serviceAccount: aws-cost-exporter
+      serviceAccountName: aws-cost-exporter
       containers:
         - name: aws-cost-exporter
-          image: "opensourceelectrolux/aws-cost-exporter:v1.0.1"
+          image: "phatnt13/aws-cost-exporter:v1.0.6"
           command: [ "python", "main.py", "-c", "/exporter_config.yaml" ]
           imagePullPolicy: Always
-          env:
-          - name: AWS_ACCESS_KEY
-            valueFrom:
-              secretKeyRef:
-                name: aws-cost-exporter
-                key: aws_access_key
-          - name: AWS_ACCESS_SECRET
-            valueFrom:
-              secretKeyRef:
-                name: aws-cost-exporter
-                key: aws_access_secret
           ports:
             - containerPort: 9090
               name: metrics

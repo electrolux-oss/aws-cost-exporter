@@ -2,9 +2,9 @@ exporter_port: $EXPORTER_PORT|9090 # the port that exposes cost metrics
 polling_interval_seconds: $POLLING_INTERVAL_SECONDS|28800 # by default it is 8 hours because for daily cost, AWS only updates the data once per day
 metric_name: aws_daily_cost_usd # change the metric name if needed
 
-aws_access_key: $AWS_ACCESS_KEY # for prod deployment, DO NOT put the actual value here
-aws_access_secret: $AWS_ACCESS_SECRET # for prod deployment, DO NOT put the actual value here
-aws_assumed_role_name: phoenix-service-cloud-cost-role
+aws_access_key: $AWS_ACCESS_KEY|"" # for prod deployment, DO NOT put the actual value here or default is null ("") to use iam-role/irsa
+aws_access_secret: $AWS_ACCESS_SECRET|"" # for prod deployment, DO NOT put the actual value here or default is set null ("") to use iam-role/irsa
+aws_assumed_role_name: example-assumerole
 
 group_by:
   enabled: true
@@ -27,6 +27,9 @@ group_by:
 target_aws_accounts:
   # here defines a list of target AWS accounts
   # it should be guaranteed that all the AWS accounts have the same set of keys (in this example they are Publisher, ProjectName, and EnvironmentName)
-  - Publisher: 123456789012
-    ProjectName: myproject
+  - Publisher: 234567890123
+    ProjectName: dev-team-1
+    EnvironmentName: dev
+  - Publisher: 321645789123
+    ProjectName: dev-team-2
     EnvironmentName: dev

@@ -42,7 +42,7 @@ class MetricExporter:
         while True:
             # every time we clear up all the existing labels before setting new ones
             self.aws_daily_cost_usd .clear()
-
+            
             for aws_account in self.targets:
                 logging.info("querying cost data for aws account %s" % aws_account["Publisher"])
                 try:
@@ -52,7 +52,7 @@ class MetricExporter:
                     continue
             time.sleep(self.polling_interval_seconds)
 
-    def get_aws_account_session(self, account_id):
+    def get_aws_account_session_default(self, account_id):
         sts_client = boto3.client(
             "sts",
             aws_access_key_id=self.aws_access_key,
@@ -61,6 +61,17 @@ class MetricExporter:
 
         assumed_role_object = sts_client.assume_role(
             RoleArn=f"arn:aws:iam::{account_id}:role/{self.aws_assumed_role_name}", RoleSessionName="AssumeRoleSession1"
+        )
+
+        return assumed_role_object["Credentials"]
+
+    def get_aws_account_session(self, account_id):
+        sts_client = boto3.client(
+            "sts",
+        )
+
+        assumed_role_object = sts_client.assume_role(
+            RoleArn=f"arn:aws:iam::{account_id}:role/{self.aws_assumed_role_name}",RoleSessionName="AssumeRoleSession1"
         )
 
         return assumed_role_object["Credentials"]
@@ -83,7 +94,10 @@ class MetricExporter:
         return response["ResultsByTime"]
 
     def fetch(self, aws_account):
-        aws_credentials = self.get_aws_account_session(aws_account["Publisher"])
+        if self.aws_access_key == "" and self.aws_access_secret == "":
+            aws_credentials = self.get_aws_account_session(aws_account["Publisher"])
+        else:
+            aws_credentials = self.get_aws_account_session_default(aws_account["Publisher"])
 
         aws_client = boto3.client(
             "ce",
