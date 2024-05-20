@@ -52,7 +52,7 @@ class MetricExporter:
                     continue
             time.sleep(self.polling_interval_seconds)
 
-    def get_aws_account_session_default(self, account_id):
+    def get_aws_account_session_via_iam_user(self, account_id):
         sts_client = boto3.client(
             "sts",
             aws_access_key_id=self.aws_access_key,
@@ -65,7 +65,7 @@ class MetricExporter:
 
         return assumed_role_object["Credentials"]
 
-    def get_aws_account_session_via_iam_user(self, account_id):
+    def get_aws_account_session_default(self, account_id):
         sts_client = boto3.client(
             "sts",
         )
@@ -95,9 +95,9 @@ class MetricExporter:
 
     def fetch(self, aws_account):
         if self.aws_access_key == "" and self.aws_access_secret == "":
-            aws_credentials = self.get_aws_account_session_via_iam_user(aws_account["Publisher"])
-        else:
             aws_credentials = self.get_aws_account_session_default(aws_account["Publisher"])
+        else:
+            aws_credentials = self.get_aws_account_session_via_iam_user(aws_account["Publisher"])
 
         aws_client = boto3.client(
             "ce",
