@@ -30,16 +30,7 @@ AWS Cost Metrics Exporter fetches cost data from a list of AWS accounts, each of
 ![aws-cost-exporter-design](doc/images/aws-cost-exporter-design.png)
 
 ## How Does Exporter Use AWS Credentials
-This exporter works base on [Boto3 SDK](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/credentials.html#configuring-credentials), with order is changed a littel as below:
-- Passing credentials as parameters in the boto.client() method, these parameters are defined in the `exporter_config.yaml` file as `aws_access_key` and `aws_secret_key`.
-- When both `aws_access_key` and `aws_secret_key` are set to null values in the `exporter_config.yaml` file, the subsequent priority order will be:
-   - Environment variables when export enviroment variables with `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_SESSION_TOKEN`
-   - Shared credential file (~/.aws/credentials)
-   - AWS config file (~/.aws/config)
-   - Assume Role provider
-   - Assume Role With Web Identity Provider: example use IRSA on EKS
-   - Boto2 config file (/etc/boto.cfg and ~/.boto)
-   - Instance metadata service on an Amazon EC2 instance that has an IAM role configured.
+This exporter is implemented with [AWS Boto3 SDK](https://boto3.amazonaws.com/v1/documentation/api/latest/index.html) and it follows the order in which Boto3 searches for credentials (see the official docs [here](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/credentials.html#configuring-credentials)). The only difference is that, when `aws_access_key` and `aws_secret_key` are defined in the `exporter_config.yaml` file, the exporter will use these credentials and authenticate as an IAM user.
 
 ## Setup AWS IAM User, Role, and Policy
 
