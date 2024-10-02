@@ -3,7 +3,6 @@
 # Filename: exporter.py
 
 import logging
-import time
 from datetime import datetime
 
 import boto3
@@ -38,19 +37,17 @@ class MetricExporter:
                 self.labels.add(group["label_name"])
         self.aws_daily_cost_usd = Gauge(self.metric_name, "Daily cost of an AWS account in USD", self.labels)
 
-    def run_metrics_loop(self):
-        while True:
-            # every time we clear up all the existing labels before setting new ones
-            self.aws_daily_cost_usd .clear()
-            
-            for aws_account in self.targets:
-                logging.info("querying cost data for aws account %s" % aws_account["Publisher"])
-                try:
-                    self.fetch(aws_account)
-                except Exception as e:
-                    logging.error(e)
-                    continue
-            time.sleep(self.polling_interval_seconds)
+    def run_metrics(self):
+        # every time we clear up all the existing labels before setting new ones
+        self.aws_daily_cost_usd .clear()
+        
+        for aws_account in self.targets:
+            logging.info("querying cost data for aws account %s" % aws_account["Publisher"])
+            try:
+                self.fetch(aws_account)
+            except Exception as e:
+                logging.error(e)
+                continue
 
     def get_aws_account_session_via_iam_user(self, account_id):
         sts_client = boto3.client(
