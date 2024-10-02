@@ -20,6 +20,7 @@ class MetricExporter:
         aws_assumed_role_name,
         group_by,
         targets,
+        metrics_type,
     ):
         self.polling_interval_seconds = polling_interval_seconds
         self.metric_name = metric_name
@@ -28,6 +29,7 @@ class MetricExporter:
         self.aws_access_secret = aws_access_secret
         self.aws_assumed_role_name = aws_assumed_role_name
         self.group_by = group_by
+        self.metrics_type = metrics_type  # Store metrics
         # we have verified that there is at least one target
         self.labels = set(targets[0].keys())
         # for now we only support exporting one type of cost (Usage)
@@ -40,7 +42,7 @@ class MetricExporter:
     def run_metrics(self):
         # every time we clear up all the existing labels before setting new ones
         self.aws_daily_cost_usd .clear()
-        
+
         for aws_account in self.targets:
             logging.info("querying cost data for aws account %s" % aws_account["Publisher"])
             try:
@@ -85,9 +87,10 @@ class MetricExporter:
             TimePeriod={"Start": start_date.strftime("%Y-%m-%d"), "End": end_date.strftime("%Y-%m-%d")},
             Filter={"Dimensions": {"Key": "RECORD_TYPE", "Values": ["Usage"]}},
             Granularity="DAILY",
-            Metrics=["UnblendedCost"],
+            Metrics=self.metrics_type,  # Use dynamic metrics
             GroupBy=groups,
         )
+
         return response["ResultsByTime"]
 
     def fetch(self, aws_account):
