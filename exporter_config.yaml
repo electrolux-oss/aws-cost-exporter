@@ -6,42 +6,45 @@ aws_access_secret: $AWS_ACCESS_SECRET|"" # for prod deployment, DO NOT put the a
 aws_assumed_role_name: example-assumerole
 
 metrics:
-- metric_name: aws_daily_cost_by_service_by_account # change the metric name if needed
-  group_by:
-    enabled: true
-    # Cost data can be groupped using up to two different groups: DIMENSION, TAG, COST_CATEGORY.
-    # ref: https://docs.aws.amazon.com/aws-cost-management/latest/APIReference/API_GetCostAndUsageWithResources.html
-    # note: label_name should be unique, and different from the labes in target_aws_accounts
-    groups:
-      - type: DIMENSION
-        key: SERVICE
-        label_name: ServiceName
-      - type: DIMENSION
-        key: LINKED_ACCOUNT
-        label_name: AccountName
-    merge_minor_cost:
-      # if this is enabled, minor cost that is below the threshold will be merged into one group
-      enabled: false
-      threshold: 10
-      tag_value: other
-- metric_name: aws_daily_cost_usd # change the metric name if needed
-  group_by:
-    enabled: false
-    # Cost data can be groupped using up to two different groups: DIMENSION, TAG, COST_CATEGORY.
-    # ref: https://docs.aws.amazon.com/aws-cost-management/latest/APIReference/API_GetCostAndUsageWithResources.html
-    # note: label_name should be unique, and different from the labes in target_aws_accounts
-    groups:
-      - type: DIMENSION
-        key: SERVICE
-        label_name: ServiceName
-      - type: DIMENSION
-        key: REGION
-        label_name: RegionName
-    merge_minor_cost:
-      # if this is enabled, minor cost that is below the threshold will be merged into one group
-      enabled: false
-      threshold: 10
-      tag_value: other
+  - metric_name: aws_daily_cost_by_service_by_account # change the metric name if needed
+    group_by:
+      enabled: true
+      # Cost data can be groupped using up to two different groups: DIMENSION, TAG, COST_CATEGORY.
+      # ref: https://docs.aws.amazon.com/aws-cost-management/latest/APIReference/API_GetCostAndUsageWithResources.html
+      # note: label_name should be unique, and different from the labes in target_aws_accounts
+      groups:
+        - type: DIMENSION
+          key: SERVICE
+          label_name: ServiceName
+        - type: DIMENSION
+          key: LINKED_ACCOUNT
+          label_name: AccountName
+      merge_minor_cost:
+        # if this is enabled, minor cost that is below the threshold will be merged into one group
+        enabled: false
+        threshold: 10
+        tag_value: other
+    # Allowed values for metric type are AmortizedCost, BlendedCost, NetAmortizedCost, NetUnblendedCost, NormalizedUsageAmount, UnblendedCost, and UsageQuantity
+    metrics_type: AmortizedCost
+    
+  - metric_name: aws_daily_cost_usd # change the metric name if needed
+    group_by:
+      # Cost data can be groupped using up to two different groups: DIMENSION, TAG, COST_CATEGORY.
+      # ref: https://docs.aws.amazon.com/aws-cost-management/latest/APIReference/API_GetCostAndUsageWithResources.html
+      # note: label_name should be unique, and different from the labes in target_aws_accounts
+      groups:
+        - type: DIMENSION
+          key: SERVICE
+          label_name: ServiceName
+        - type: DIMENSION
+          key: REGION
+          label_name: RegionName
+      merge_minor_cost:
+        # if this is enabled, minor cost that is below the threshold will be merged into one group
+        enabled: false
+        threshold: 10
+        tag_value: other
+    metrics_type: AmortizedCost
 
 target_aws_accounts:
   # here defines a list of target AWS accounts
