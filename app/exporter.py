@@ -20,7 +20,7 @@ class MetricExporter:
         aws_assumed_role_name,
         group_by,
         targets,
-        metrics_type,
+        metric_type,
     ):
         self.polling_interval_seconds = polling_interval_seconds
         self.metric_name = metric_name
@@ -29,7 +29,7 @@ class MetricExporter:
         self.aws_access_secret = aws_access_secret
         self.aws_assumed_role_name = aws_assumed_role_name
         self.group_by = group_by
-        self.metrics_type = metrics_type  # Store metrics
+        self.metric_type = metric_type  # Store metrics
         # we have verified that there is at least one target
         self.labels = set(targets[0].keys())
         # for now we only support exporting one type of cost (Usage)
@@ -41,7 +41,7 @@ class MetricExporter:
 
     def run_metrics(self):
         # every time we clear up all the existing labels before setting new ones
-        self.aws_daily_cost_usd .clear()
+        self.aws_daily_cost_usd.clear()
 
         for aws_account in self.targets:
             logging.info("querying cost data for aws account %s" % aws_account["Publisher"])
@@ -70,7 +70,7 @@ class MetricExporter:
         )
 
         assumed_role_object = sts_client.assume_role(
-            RoleArn=f"arn:aws:iam::{account_id}:role/{self.aws_assumed_role_name}",RoleSessionName="AssumeRoleSession1"
+            RoleArn=f"arn:aws:iam::{account_id}:role/{self.aws_assumed_role_name}", RoleSessionName="AssumeRoleSession1"
         )
 
         return assumed_role_object["Credentials"]
@@ -87,7 +87,7 @@ class MetricExporter:
             TimePeriod={"Start": start_date.strftime("%Y-%m-%d"), "End": end_date.strftime("%Y-%m-%d")},
             Filter={"Dimensions": {"Key": "RECORD_TYPE", "Values": ["Usage"]}},
             Granularity="DAILY",
-            Metrics=self.metrics_type,  # Use dynamic metrics
+            Metrics=[self.metric_type],  # Use dynamic metrics
             GroupBy=groups,
         )
 
@@ -110,12 +110,12 @@ class MetricExporter:
 
         for result in cost_response:
             if not self.group_by["enabled"]:
-                cost = float(result["Total"]["UnblendedCost"]["Amount"])
+                cost = float(result["Total"][self.metric_type]["Amount"])
                 self.aws_daily_cost_usd.labels(**aws_account, ChargeType="Usage").set(cost)
             else:
                 merged_minor_cost = 0
                 for item in result["Groups"]:
-                    cost = float(item["Metrics"]["UnblendedCost"]["Amount"])
+                    cost = float(item["Metrics"][self.metric_type]["Amount"])
 
                     group_key_values = dict()
                     for i in range(len(self.group_by["groups"])):

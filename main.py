@@ -5,6 +5,7 @@
 import argparse
 import logging
 import os
+import signal
 import sys
 import time
 
@@ -12,6 +13,10 @@ from envyaml import EnvYAML
 from prometheus_client import start_http_server
 
 from app.exporter import MetricExporter
+
+
+def handle_sigint(sig, frame):
+    exit()
 
 
 def get_configs():
@@ -34,9 +39,14 @@ def get_configs():
 
 def validate_configs(config):
 
-    valid_metrics_types = [
-        "AmortizedCost", "BlendedCost", "NetAmortizedCost", "NetUnblendedCost",
-        "NormalizedUsageAmount", "UnblendedCost", "UsageQuantity"
+    valid_metric_types = [
+        "AmortizedCost",
+        "BlendedCost",
+        "NetAmortizedCost",
+        "NetUnblendedCost",
+        "NormalizedUsageAmount",
+        "UnblendedCost",
+        "UsageQuantity",
     ]
 
     if len(config["target_aws_accounts"]) == 0:
@@ -71,9 +81,11 @@ def validate_configs(config):
             logging.error("Some label names in group_by are the same as AWS account labels!")
             sys.exit(1)
 
-        # Validate metrics_type
-        if config_metric["metrics_type"] not in valid_metrics_types:
-            logging.error(f"Invalid metrics_type: {config_metric['metrics_type']}. It must be one of {', '.join(valid_metrics_types)}.")
+        # Validate metric_type
+        if config_metric["metric_type"] not in valid_metric_types:
+            logging.error(
+                f"Invalid metric_type: {config_metric['metric_type']}. It must be one of {', '.join(valid_metric_types)}."
+            )
             sys.exit(1)
 
     for i in range(1, len(config["target_aws_accounts"])):
@@ -99,7 +111,6 @@ def validate_configs(config):
             sys.exit(1)
 
 
-
 def main(config):
     start_http_server(config["exporter_port"])
     while True:
@@ -112,7 +123,7 @@ def main(config):
                 targets=config["target_aws_accounts"],
                 metric_name=config_metric["metric_name"],
                 group_by=config_metric["group_by"],
-                metrics_type=[config_metric["metrics_type"]],
+                metric_type=config_metric["metric_type"],
             )
             app_metrics.run_metrics()
         time.sleep(config["polling_interval_seconds"])
@@ -121,6 +132,7 @@ def main(config):
 if __name__ == "__main__":
     logger_format = "%(asctime)-15s %(levelname)-8s %(message)s"
     logging.basicConfig(level=logging.INFO, format=logger_format)
+    signal.signal(signal.SIGINT, handle_sigint)
     config = get_configs()
     validate_configs(config)
     main(config)
