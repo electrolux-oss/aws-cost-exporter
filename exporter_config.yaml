@@ -25,7 +25,7 @@ metrics:
         threshold: 10
         tag_value: other
     # Allowed values for metric type are AmortizedCost, BlendedCost, NetAmortizedCost, NetUnblendedCost, NormalizedUsageAmount, UnblendedCost, and UsageQuantity
-    metrics_type: AmortizedCost
+    metric_type: AmortizedCost
 
   - metric_name: aws_daily_cost_usd # change the metric name if needed
     group_by:
@@ -45,7 +45,7 @@ metrics:
         threshold: 10
         tag_value: other
     # Allowed values for metric type are AmortizedCost, BlendedCost, NetAmortizedCost, NetUnblendedCost, NormalizedUsageAmount, UnblendedCost, and UsageQuantity
-    metrics_type: AmortizedCost
+    metric_type: AmortizedCost
 
 target_aws_accounts:
   # here defines a list of target AWS accounts
