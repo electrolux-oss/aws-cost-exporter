@@ -12,16 +12,16 @@ from prometheus_client import Gauge
 
 class MetricExporter:
     def __init__(
-            self,
-            polling_interval_seconds,
-            metric_name,
-            aws_access_key,
-            aws_access_secret,
-            aws_assumed_role_name,
-            group_by,
-            targets,
-            metric_type,
-            tag_filters=None,  # Added tag_filters parameter
+        self,
+        polling_interval_seconds,
+        metric_name,
+        aws_access_key,
+        aws_access_secret,
+        aws_assumed_role_name,
+        group_by,
+        targets,
+        metric_type,
+        tag_filters=None,  # Added tag_filters parameter
     ):
         self.polling_interval_seconds = polling_interval_seconds
         self.metric_name = metric_name
