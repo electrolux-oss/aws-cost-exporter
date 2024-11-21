@@ -26,6 +26,11 @@ metrics:
         tag_value: other
     # Allowed values for metric type are AmortizedCost, BlendedCost, NetAmortizedCost, NetUnblendedCost, NormalizedUsageAmount, UnblendedCost, and UsageQuantity
     metric_type: AmortizedCost
+    tag_filters:
+      ProjectName:
+        - dev-team-1
+      EnvironmentName:
+        - dev
 
   - metric_name: aws_daily_cost_usd # change the metric name if needed
     group_by:
@@ -46,6 +51,11 @@ metrics:
         tag_value: other
     # Allowed values for metric type are AmortizedCost, BlendedCost, NetAmortizedCost, NetUnblendedCost, NormalizedUsageAmount, UnblendedCost, and UsageQuantity
     metric_type: AmortizedCost
+    tag_filters:
+      ProjectName:
+        - dev-team-1
+      EnvironmentName:
+        - dev
 
 target_aws_accounts:
   # here defines a list of target AWS accounts

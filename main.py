@@ -50,7 +50,7 @@ def validate_configs(config):
     ]
 
     if len(config["target_aws_accounts"]) == 0:
-        logging.error("There should be at least one target AWS accounts defined in the config!")
+        logging.error("There should be at least one target AWS account defined in the config!")
         sys.exit(1)
 
     labels = config["target_aws_accounts"][0].keys()
@@ -65,21 +65,23 @@ def validate_configs(config):
             sys.exit(1)
 
     for config_metric in config["metrics"]:
+        group_label_names = set()
 
         if config_metric["group_by"]["enabled"]:
             if len(config_metric["group_by"]["groups"]) < 1 or len(config_metric["group_by"]["groups"]) > 2:
                 logging.error("If group_by is enabled, there should be at least one group, and at most two groups!")
                 sys.exit(1)
-            group_label_names = set()
+
             for group in config_metric["group_by"]["groups"]:
                 if group["label_name"] in group_label_names:
                     logging.error("Group label names should be unique!")
                     sys.exit(1)
                 else:
                     group_label_names.add(group["label_name"])
-        if group_label_names and (group_label_names & set(labels)):
-            logging.error("Some label names in group_by are the same as AWS account labels!")
-            sys.exit(1)
+
+            if group_label_names & set(labels):
+                logging.error("Some label names in group_by are the same as AWS account labels!")
+                sys.exit(1)
 
         # Validate metric_type
         if config_metric["metric_type"] not in valid_metric_types:
@@ -88,27 +90,18 @@ def validate_configs(config):
             )
             sys.exit(1)
 
-    for i in range(1, len(config["target_aws_accounts"])):
-        if labels != config["target_aws_accounts"][i].keys():
-            logging.error("All the target AWS accounts should have the same set of keys (labels)!")
-            sys.exit(1)
-
-    for config_metric in config["metrics"]:
-
-        if config_metric["group_by"]["enabled"]:
-            if len(config_metric["group_by"]["groups"]) < 1 or len(config_metric["group_by"]["groups"]) > 2:
-                logging.error("If group_by is enabled, there should be at least one group, and at most two groups!")
+        # Validate tag_filters if present
+        if "tag_filters" in config_metric:
+            tag_filters = config_metric["tag_filters"]
+            if not isinstance(tag_filters, dict):
+                logging.error("tag_filters should be a dictionary.")
                 sys.exit(1)
-            group_label_names = set()
-            for group in config_metric["group_by"]["groups"]:
-                if group["label_name"] in group_label_names:
-                    logging.error("Group label names should be unique!")
+            for tag_key, tag_values in tag_filters.items():
+                if not isinstance(tag_values, list):
+                    logging.error(f"Values for tag '{tag_key}' should be a list.")
                     sys.exit(1)
-                else:
-                    group_label_names.add(group["label_name"])
-        if group_label_names and (group_label_names & set(labels)):
-            logging.error("Some label names in group_by are the same as AWS account labels!")
-            sys.exit(1)
+
+    # No need to repeat the validation loops; they have been consolidated above.
 
 
 def main(config):
@@ -124,6 +117,7 @@ def main(config):
                 metric_name=config_metric["metric_name"],
                 group_by=config_metric["group_by"],
                 metric_type=config_metric["metric_type"],
+                tag_filters=config_metric.get("tag_filters", None),  # Added tag_filters parameter
             )
             app_metrics.run_metrics()
         time.sleep(config["polling_interval_seconds"])
