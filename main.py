@@ -112,20 +112,24 @@ def validate_configs(config):
 
 
 def main(config):
+    metric_exporters = []
+    for config_metric in config["metrics"]:
+        metric = MetricExporter(
+            polling_interval_seconds=config["polling_interval_seconds"],
+            aws_access_key=config["aws_access_key"],
+            aws_access_secret=config["aws_access_secret"],
+            aws_assumed_role_name=config["aws_assumed_role_name"],
+            targets=config["target_aws_accounts"],
+            metric_name=config_metric["metric_name"],
+            group_by=config_metric["group_by"],
+            metric_type=config_metric["metric_type"],
+        )
+        metric_exporters.append(metric)
+
     start_http_server(config["exporter_port"])
     while True:
-        for config_metric in config["metrics"]:
-            app_metrics = MetricExporter(
-                polling_interval_seconds=config["polling_interval_seconds"],
-                aws_access_key=config["aws_access_key"],
-                aws_access_secret=config["aws_access_secret"],
-                aws_assumed_role_name=config["aws_assumed_role_name"],
-                targets=config["target_aws_accounts"],
-                metric_name=config_metric["metric_name"],
-                group_by=config_metric["group_by"],
-                metric_type=config_metric["metric_type"],
-            )
-            app_metrics.run_metrics()
+        for exporter in metric_exporters:
+            exporter.run_metrics()
         time.sleep(config["polling_interval_seconds"])
 
 
