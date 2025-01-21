@@ -94,11 +94,11 @@ def validate_configs(config):
         if "tag_filters" in config_metric:
             tag_filters = config_metric["tag_filters"]
             if not isinstance(tag_filters, list):
-                logging.error("tag_filters should be a dictionary.")
+                logging.error("tag_filters should be a list, check `exporter_config.yaml` as an example.")
                 sys.exit(1)
-            for tag_key, tag_values in tag_filters.items():
-                if not isinstance(tag_values, list):
-                    logging.error(f"Values for tag '{tag_key}' should be a list.")
+            for tag_filter in tag_filters:
+                if not isinstance(tag_filter["tag_values"], list):
+                    logging.error(f"Values for tag `{tag_filter['tag_key']}` should be a list, check `exporter_config.yaml` as an example.")
                     sys.exit(1)
 
     # No need to repeat the validation loops; they have been consolidated above.
