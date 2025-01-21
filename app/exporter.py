@@ -106,16 +106,16 @@ class MetricExporter:
         # Include tag filters if provided
         if tag_filters:
             tag_filter_list = []
-        for tag_filter in tag_filters:
-            tag_key = tag_filter["tag_key"]
-            tag_values = tag_filter["tag_values"]
-            tag_filter_list.append({
-                "Tags": {
-                    "Key": tag_key,
-                    "Values": tag_values,
-                    "MatchOptions": ["EQUALS"]
-                }
-            })
+            for tag_filter in tag_filters:
+                tag_key = tag_filter["tag_key"]
+                tag_values = tag_filter["tag_values"]
+                tag_filter_list.append({
+                    "Tags": {
+                        "Key": tag_key,
+                        "Values": tag_values,
+                        "MatchOptions": ["EQUALS"]
+                    }
+                })
 
             # Combine the base filter and tag filters using 'And'
             combined_filter = {

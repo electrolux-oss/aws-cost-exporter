@@ -93,7 +93,7 @@ def validate_configs(config):
         # Validate tag_filters if present
         if "tag_filters" in config_metric:
             tag_filters = config_metric["tag_filters"]
-            if not isinstance(tag_filters, dict):
+            if not isinstance(tag_filters, list):
                 logging.error("tag_filters should be a dictionary.")
                 sys.exit(1)
             for tag_key, tag_values in tag_filters.items():
