@@ -76,8 +76,30 @@ def validate_configs(config):
                 if group["label_name"] in group_label_names:
                     logging.error("Group label names should be unique!")
                     sys.exit(1)
-                else:
-                    group_label_names.add(group["label_name"])
+
+                if "alias" in group:
+                    if group["type"] != "DIMENSION":
+                        logging.error("Group with alias must be a dimension!")
+                        sys.exit(1)
+                    if "label_name" not in group["alias"]:
+                        logging.error("Group alias must have a label_name!")
+                        sys.exit(1)
+                    if "map" not in group["alias"]:
+                        logging.error("Group alias must have a mapping!")
+                        sys.exit(1)
+                    if group["alias"]["label_name"] in group_label_names:
+                        logging.error("Group label names and aliases should be unique!")
+                        sys.exit(1)
+                    if group["label_name"] == group["alias"]["label_name"]:
+                        logging.error("Group label name and alias name cannot be the same!")
+                        sys.exit(1)
+                    if not isinstance(group["alias"]["map"], dict):
+                        logging.error("Group alias map must be a dictionary!")
+                        sys.exit(1)
+
+                    group_label_names.add(group["alias"]["label_name"])
+
+                group_label_names.add(group["label_name"])
 
             if group_label_names & set(labels):
                 logging.error("Some label names in group_by are the same as AWS account labels!")

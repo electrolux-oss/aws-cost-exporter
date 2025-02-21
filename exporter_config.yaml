@@ -19,6 +19,12 @@ metrics:
         - type: DIMENSION
           key: LINKED_ACCOUNT
           label_name: AccountName
+          alias: # optional - this will allow you to add label alias to with mapped values (both original and aliased labels will be exported)
+            label_name: AccountAlias
+            map:
+              "123456789012": "myaccount"
+              "234567890123": "publisher1"
+              "321645789123": "publisher2"
       merge_minor_cost:
         # if this is enabled, minor cost that is below the threshold will be merged into one group
         enabled: false
