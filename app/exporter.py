@@ -32,6 +32,7 @@ class MetricExporter:
         self.group_by = group_by
         self.metric_type = metric_type  # Store metrics
         self.tag_filters = tag_filters  # Store tag filters
+        self.dimension_alias = {}  # Store dimension value alias per group
 
         # We have verified that there is at least one target
         self.labels = set(targets[0].keys())
@@ -41,6 +42,14 @@ class MetricExporter:
 
         if group_by["enabled"]:
             for group in group_by["groups"]:
+                # Handle dimension alias if present
+                if group["type"] == "DIMENSION" and "alias" in group:
+                    # Store the alias mapping for this dimension
+                    self.dimension_alias[group["key"]] = {
+                        "map": group["alias"]["map"],
+                        "label": group["alias"]["label_name"]
+                    }
+                    
                 self.labels.add(group["label_name"])
 
         self.aws_daily_cost_usd = Gauge(
@@ -169,11 +178,22 @@ class MetricExporter:
 
                     group_key_values = dict()
                     for i in range(len(self.group_by["groups"])):
-                        if self.group_by["groups"][i]["type"] == "TAG":
+                        group = self.group_by["groups"][i]
+                        if group["type"] == "TAG":
                             value = item["Keys"][i].split("$")[1]
+                            group_key_values[group["label_name"]] = value
                         else:
                             value = item["Keys"][i]
-                        group_key_values.update({self.group_by["groups"][i]["label_name"]: value})
+                            # Check if this dimension has alias
+                            if group["type"] == "DIMENSION" and group["key"] in self.dimension_alias:
+                                alias = self.dimension_alias[group["key"]]
+                                # Add both original and aliased values
+                                group_key_values[group["label_name"]] = value
+                                alias_value = alias["map"].get(value)
+                                if alias_value is not None:
+                                    group_key_values[alias["label"]] = alias_value
+                            else:
+                                group_key_values[group["label_name"]] = value
 
                     if (
                             self.group_by["merge_minor_cost"]["enabled"]
@@ -188,13 +208,17 @@ class MetricExporter:
                 if merged_minor_cost > 0:
                     group_key_values = dict()
                     for i in range(len(self.group_by["groups"])):
-                        group_key_values.update(
-                            {
-                                self.group_by["groups"][i]["label_name"]: self.group_by["merge_minor_cost"][
-                                    "tag_value"
-                                ]
-                            }
-                        )
+                        group = self.group_by["groups"][i]
+                        merged_value = self.group_by["merge_minor_cost"]["tag_value"]
+                        if group["type"] == "DIMENSION" and group["key"] in self.dimension_alias:
+                            alias = self.dimension_alias[group["key"]]
+                            # Add both original and aliased values for merged costs
+                            group_key_values[group["label_name"]] = merged_value
+                            alias_value = alias["map"].get(merged_value)
+                            if alias_value is not None:
+                                group_key_values[alias["label"]] = alias_value
+                        else:
+                            group_key_values[group["label_name"]] = merged_value
                     self.aws_daily_cost_usd.labels(
                         **aws_account, **group_key_values, ChargeType="Usage"
                     ).set(merged_minor_cost)
