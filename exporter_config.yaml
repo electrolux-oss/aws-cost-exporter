@@ -3,7 +3,7 @@ polling_interval_seconds: $POLLING_INTERVAL_SECONDS|28800 # by default it is 8 h
 
 aws_access_key: $AWS_ACCESS_KEY|"" # for prod deployment, DO NOT put the actual value here or default is null ("") to use iam-role/irsa
 aws_access_secret: $AWS_ACCESS_SECRET|"" # for prod deployment, DO NOT put the actual value here or default is set null ("") to use iam-role/irsa
-aws_assumed_role_name: example-assumerole
+aws_assumed_role_name: $AWS_ASSUMED_ROLE|"" # Optional. When empty, will use the instance profile. Otherwise, specify a role name to assume
 
 metrics:
   - metric_name: aws_daily_cost_by_service_by_account # change the metric name if needed
