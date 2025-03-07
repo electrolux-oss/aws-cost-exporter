@@ -129,11 +129,15 @@ def validate_configs(config):
 def main(config):
     metric_exporters = []
     for config_metric in config["metrics"]:
+        # Get the aws_assumed_role_name with default empty string to make it optional
+        aws_assumed_role_name = config.get("aws_assumed_role_name", "")
+
+
         metric = MetricExporter(
             polling_interval_seconds=config["polling_interval_seconds"],
             aws_access_key=config["aws_access_key"],
             aws_access_secret=config["aws_access_secret"],
-            aws_assumed_role_name=config["aws_assumed_role_name"],
+            aws_assumed_role_name=aws_assumed_role_name,
             targets=config["target_aws_accounts"],
             metric_name=config_metric["metric_name"],
             group_by=config_metric["group_by"],
