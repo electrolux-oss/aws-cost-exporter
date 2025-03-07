@@ -47,9 +47,9 @@ class MetricExporter:
                     # Store the alias mapping for this dimension
                     self.dimension_alias[group["key"]] = {
                         "map": group["alias"]["map"],
-                        "label": group["alias"]["label_name"]
+                        "label": group["alias"]["label_name"],
                     }
-                    
+
                 self.labels.add(group["label_name"])
 
         self.aws_daily_cost_usd = Gauge(
@@ -110,12 +110,7 @@ class MetricExporter:
                 groups.append({"Type": group["type"], "Key": group["key"]})
 
         # Build the base filter with RECORD_TYPE
-        base_filter = {
-            "Dimensions": {
-                "Key": "RECORD_TYPE",
-                "Values": ["Usage"]
-            }
-        }
+        base_filter = {"Dimensions": {"Key": "RECORD_TYPE", "Values": ["Usage"]}}
 
         # Include tag filters if provided
         if tag_filters:
@@ -123,18 +118,18 @@ class MetricExporter:
             for tag_filter in tag_filters:
                 tag_key = tag_filter["tag_key"]
                 tag_values = tag_filter["tag_values"]
-                tag_filter_list.append({
-                    "Tags": {
-                        "Key": tag_key,
-                        "Values": tag_values,
-                        "MatchOptions": ["EQUALS"]
+                tag_filter_list.append(
+                    {
+                        "Tags": {
+                            "Key": tag_key,
+                            "Values": tag_values,
+                            "MatchOptions": ["EQUALS"],
+                        }
                     }
-                })
+                )
 
             # Combine the base filter and tag filters using 'And'
-            combined_filter = {
-                "And": [base_filter] + tag_filter_list
-            }
+            combined_filter = {"And": [base_filter] + tag_filter_list}
         else:
             combined_filter = base_filter
 
@@ -208,14 +203,12 @@ class MetricExporter:
                                 group_key_values[group["label_name"]] = value
 
                     if (
-                            self.group_by["merge_minor_cost"]["enabled"]
-                            and cost < self.group_by["merge_minor_cost"]["threshold"]
+                        self.group_by["merge_minor_cost"]["enabled"]
+                        and cost < self.group_by["merge_minor_cost"]["threshold"]
                     ):
                         merged_minor_cost += cost
                     else:
-                        self.aws_daily_cost_usd.labels(
-                            **aws_account, **group_key_values, ChargeType="Usage"
-                        ).set(cost)
+                        self.aws_daily_cost_usd.labels(**aws_account, **group_key_values, ChargeType="Usage").set(cost)
 
                 if merged_minor_cost > 0:
                     group_key_values = dict()
@@ -231,6 +224,6 @@ class MetricExporter:
                                 group_key_values[alias["label"]] = alias_value
                         else:
                             group_key_values[group["label_name"]] = merged_value
-                    self.aws_daily_cost_usd.labels(
-                        **aws_account, **group_key_values, ChargeType="Usage"
-                    ).set(merged_minor_cost)
+                    self.aws_daily_cost_usd.labels(**aws_account, **group_key_values, ChargeType="Usage").set(
+                        merged_minor_cost
+                    )

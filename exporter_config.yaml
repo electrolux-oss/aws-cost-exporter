@@ -34,7 +34,7 @@ metrics:
     metric_type: AmortizedCost
     # the following `tag_filters` part is optional and can be removed if there is no filter by tags
     tag_filters:
-      - tag_key: 'my_org:team'
+      - tag_key: "my_org:team"
         tag_values:
           - dev-team-1
           - dev-team-2
@@ -62,7 +62,7 @@ metrics:
     # Allowed values for metric type are AmortizedCost, BlendedCost, NetAmortizedCost, NetUnblendedCost, NormalizedUsageAmount, UnblendedCost, and UsageQuantity
     metric_type: AmortizedCost
     tag_filters:
-      - tag_key: 'my_org:team'
+      - tag_key: "my_org:team"
         tag_values:
           - dev-team-1
           - dev-team-2

@@ -120,7 +120,9 @@ def validate_configs(config):
                 sys.exit(1)
             for tag_filter in tag_filters:
                 if not isinstance(tag_filter["tag_values"], list):
-                    logging.error(f"Values for tag `{tag_filter['tag_key']}` should be a list, check `exporter_config.yaml` as an example.")
+                    logging.error(
+                        f"Values for tag `{tag_filter['tag_key']}` should be a list, check `exporter_config.yaml` as an example."
+                    )
                     sys.exit(1)
 
     # No need to repeat the validation loops; they have been consolidated above.
@@ -131,7 +133,6 @@ def main(config):
     for config_metric in config["metrics"]:
         # Get the aws_assumed_role_name with default empty string to make it optional
         aws_assumed_role_name = config.get("aws_assumed_role_name", "")
-
 
         metric = MetricExporter(
             polling_interval_seconds=config["polling_interval_seconds"],
