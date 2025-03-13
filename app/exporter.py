@@ -49,6 +49,7 @@ class MetricExporter:
                         "map": group["alias"]["map"],
                         "label": group["alias"]["label_name"],
                     }
+                    self.labels.add(group["alias"]["label_name"])
 
                 self.labels.add(group["label_name"])
 
