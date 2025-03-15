@@ -32,6 +32,11 @@ metrics:
         tag_value: other
     # Allowed values for metric type are AmortizedCost, BlendedCost, NetAmortizedCost, NetUnblendedCost, NormalizedUsageAmount, UnblendedCost, and UsageQuantity
     metric_type: AmortizedCost
+    # the following `record_types` part is optional and can be removed if there is no filter by record types
+    # ref: https://docs.aws.amazon.com/awsaccountbilling/latest/aboutv2/manage-cost-categories.html#cost-categories-terms
+    record_types:
+      - Usage
+      - SavingsPlanCoveredUsage
     # the following `tag_filters` part is optional and can be removed if there is no filter by tags
     tag_filters:
       - tag_key: "my_org:team"
