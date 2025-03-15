@@ -21,6 +21,7 @@ class MetricExporter:
         group_by,
         targets,
         metric_type,
+        record_types=None,
         tag_filters=None,  # Added tag_filters parameter
     ):
         self.polling_interval_seconds = polling_interval_seconds
@@ -31,6 +32,7 @@ class MetricExporter:
         self.aws_assumed_role_name = aws_assumed_role_name
         self.group_by = group_by
         self.metric_type = metric_type  # Store metrics
+        self.record_types = record_types
         self.tag_filters = tag_filters  # Store tag filters
         self.dimension_alias = {}  # Store dimension value alias per group
 
@@ -39,6 +41,11 @@ class MetricExporter:
 
         # For now we only support exporting one type of cost (Usage)
         self.labels.add("ChargeType")
+
+        # If record_types is not provided, use the default value
+        if record_types is None:
+            record_types = []
+        record_types.append("Usage")
 
         if group_by["enabled"]:
             for group in group_by["groups"]:
@@ -99,7 +106,7 @@ class MetricExporter:
                 groups.append({"Type": group["type"], "Key": group["key"]})
 
         # Build the base filter with RECORD_TYPE
-        base_filter = {"Dimensions": {"Key": "RECORD_TYPE", "Values": ["Usage"]}}
+        base_filter = {"Dimensions": {"Key": "RECORD_TYPE", "Values": self.record_types}}
 
         # Include tag filters if provided
         if tag_filters:

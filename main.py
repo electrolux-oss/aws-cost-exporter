@@ -49,6 +49,20 @@ def validate_configs(config):
         "UsageQuantity",
     ]
 
+    valid_record_types = [
+        "Credit",
+        "DiscountedUsage",
+        "Fee",
+        "Refund",
+        "RIFee",
+        "SavingsPlanCoveredUsage",
+        "SavingsPlanNegation",
+        "SavingsPlanRecurringFee",
+        "SavingsPlanUpfrontFee",
+        "Tax",
+        "Usage",
+    ]
+
     if len(config["target_aws_accounts"]) == 0:
         logging.error("There should be at least one target AWS account defined in the config!")
         sys.exit(1)
@@ -112,6 +126,20 @@ def validate_configs(config):
             )
             sys.exit(1)
 
+        # Validate record_types
+        if "record_types" in config_metric:
+            record_types = config_metric["record_types"]
+            if not isinstance(record_types, list):
+                logging.error("record_types should be a list, check `exporter_config.yaml` as an example.")
+                sys.exit(1)
+            for record_type in record_types:
+                if record_type not in valid_record_types:
+                    logging.error(record_type)
+                    logging.error(
+                        f"Invalid record_types: {config_metric['record_types']}. It must be one of {', '.join(valid_record_types)}."
+                    )
+                    sys.exit(1)
+
         # Validate tag_filters if present
         if "tag_filters" in config_metric:
             tag_filters = config_metric["tag_filters"]
@@ -146,6 +174,7 @@ def main(config):
             metric_name=config_metric["metric_name"],
             group_by=config_metric["group_by"],
             metric_type=config_metric["metric_type"],
+            record_types=config_metric.get("record_types", ["Usage"]),
         )
         metric_exporters.append(metric)
 
