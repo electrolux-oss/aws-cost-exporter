@@ -45,7 +45,7 @@ class MetricExporter:
         # If record_types is not provided, use the default value
         if record_types is None:
             record_types = []
-        record_types.append("Usage")
+            record_types.append("Usage")
 
         if group_by["enabled"]:
             for group in group_by["groups"]:
