@@ -96,6 +96,7 @@ class MetricExporter:
         return assumed_role_object["Credentials"]
 
     def query_aws_cost_explorer(self, aws_client, group_by, tag_filters=None):
+        results = list()
         end_date = datetime.today()
         start_date = end_date - relativedelta(days=1)
 
@@ -129,18 +130,26 @@ class MetricExporter:
         else:
             combined_filter = base_filter
 
-        response = aws_client.get_cost_and_usage(
-            TimePeriod={
-                "Start": start_date.strftime("%Y-%m-%d"),
-                "End": end_date.strftime("%Y-%m-%d"),
-            },
-            Filter=combined_filter,
-            Granularity="DAILY",
-            Metrics=[self.metric_type],  # Use dynamic metrics
-            GroupBy=groups,
-        )
+        next_page_token = ""
+        while True:
+            response = aws_client.get_cost_and_usage(
+                TimePeriod={
+                    "Start": start_date.strftime("%Y-%m-%d"),
+                    "End": end_date.strftime("%Y-%m-%d"),
+                },
+                Filter=combined_filter,
+                Granularity="DAILY",
+                Metrics=[self.metric_type],  # Use dynamic metrics
+                GroupBy=groups,
+                **({"NextPageToken": next_page_token} if next_page_token else {}),
+            )
+            results.extend(response["ResultsByTime"])
+            if "NextPageToken" in response:
+                next_page_token = response["NextPageToken"]
+            else:
+                break
 
-        return response["ResultsByTime"]
+        return results
 
     def fetch(self, aws_account):
         if self.aws_assumed_role_name:
