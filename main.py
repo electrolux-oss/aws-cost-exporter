@@ -175,6 +175,7 @@ def main(config):
             group_by=config_metric["group_by"],
             metric_type=config_metric["metric_type"],
             record_types=config_metric.get("record_types", ["Usage"]),
+            tag_filters=config_metric.get("tag_filters", None)
         )
         metric_exporters.append(metric)
 
