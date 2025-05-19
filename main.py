@@ -62,6 +62,11 @@ def validate_configs(config):
         "Tax",
         "Usage",
     ]
+    
+    valid_granularity_types = [
+        "DAILY",
+        "MONTHLY",
+    ]
 
     if len(config["target_aws_accounts"]) == 0:
         logging.error("There should be at least one target AWS account defined in the config!")
@@ -119,6 +124,16 @@ def validate_configs(config):
                 logging.error("Some label names in group_by are the same as AWS account labels!")
                 sys.exit(1)
 
+        # Validate granularity
+        if "granularity" not in config_metric:
+            logging.warning(f"Granularity not specified for metric {config_metric['metric_name']}, defaulting to DAILY")
+            config_metric["granularity"] = "DAILY"
+        elif config_metric["granularity"] not in valid_granularity_types:
+            logging.error(
+                f"Invalid granularity: {config_metric['granularity']}. It must be one of {', '.join(valid_granularity_types)}."
+            )
+            sys.exit(1)
+            
         # Validate metric_type
         if config_metric["metric_type"] not in valid_metric_types:
             logging.error(
@@ -175,7 +190,8 @@ def main(config):
             group_by=config_metric["group_by"],
             metric_type=config_metric["metric_type"],
             record_types=config_metric.get("record_types", ["Usage"]),
-            tag_filters=config_metric.get("tag_filters", None)
+            tag_filters=config_metric.get("tag_filters", None),
+            granularity=config_metric.get("granularity", "DAILY")
         )
         metric_exporters.append(metric)
 
