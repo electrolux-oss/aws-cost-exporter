@@ -203,8 +203,7 @@ class MetricExporter:
         for result in cost_response:
             if not self.group_by["enabled"]:
                 cost = float(result["Total"][self.metric_type]["Amount"])
-                charge_type = "Usage" if self.record_types and "Usage" in self.record_types else self.record_types[0] if self.record_types else "Usage"
-                self.cost_metric.labels(**aws_account, ChargeType=charge_type).set(cost)
+                self.cost_metric.labels(**aws_account, ChargeType="Usage").set(cost)
             else:
                 merged_minor_cost = 0
                 for item in result["Groups"]:
