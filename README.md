@@ -23,6 +23,22 @@ aws_daily_cost_usd{ChargeType="Usage",EnvironmentName="prod",ProjectName="myproj
 
 _ps: As the metric name indicate, the metric shows the daily costs in USD. `Daily` is based a fixed 24h time window, from UTC 00:00 to UTC 24:00. `EnvironmentName` and `ProjectName` are the custom labels that can be configured. `RegionName` is a label based on `group_by` configuration._
 
+## Supported Granularities
+
+The exporter supports different granularities for cost metrics:
+
+- **DAILY**: Exports the cost for the previous day.
+- **MONTHLY**: Exports month-to-date costs (from the first day of the current month to now).
+
+You can specify the granularity for each metric in the `exporter_config.yaml` file:
+
+```yaml
+metrics:
+  - metric_name: aws_daily_cost_usd
+    granularity: DAILY  # Valid values: DAILY, MONTHLY
+    # ... other configurations
+```
+
 ## How Does This Work
 
 AWS Cost Metrics Exporter fetches cost data from a list of AWS accounts, each of which provides a necessary IAM role for the exporter. It regularly queries the AWS [GetCostAndUsage](https://docs.aws.amazon.com/aws-cost-management/latest/APIReference/API_GetCostAndUsage.html) to get the whole AWS account's cost. It is configurable to have different queries, such as group by services and tags, merge minor cost to one single category, etc. The following figure describes how AWS Cost Metrics Exporter works.

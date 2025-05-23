@@ -23,6 +23,7 @@ class MetricExporter:
         metric_type,
         record_types=None,
         tag_filters=None,  # Added tag_filters parameter
+        granularity="DAILY",
     ):
         self.polling_interval_seconds = polling_interval_seconds
         self.metric_name = metric_name
@@ -33,7 +34,8 @@ class MetricExporter:
         self.group_by = group_by
         self.metric_type = metric_type  # Store metrics
         self.record_types = record_types
-        self.tag_filters = tag_filters  # Store tag filters
+        self.tag_filters = tag_filters # Store tag filters
+        self.granularity = granularity
         self.dimension_alias = {}  # Store dimension value alias per group
 
         # We have verified that there is at least one target
@@ -60,15 +62,19 @@ class MetricExporter:
 
                 self.labels.add(group["label_name"])
 
-        self.aws_daily_cost_usd = Gauge(
+        metric_description = f"{self.granularity.lower().capitalize()} cost of an AWS account in USD"
+        if self.granularity == "MONTHLY":
+            metric_description = "Month-to-date cost of an AWS account in USD"
+            
+        self.cost_metric = Gauge(
             self.metric_name,
-            "Daily cost of an AWS account in USD",
+            metric_description,
             self.labels,
         )
 
     def run_metrics(self):
         # Every time we clear up all the existing labels before setting new ones
-        self.aws_daily_cost_usd.clear()
+        self.cost_metric.clear()
 
         for aws_account in self.targets:
             logging.info("Querying cost data for AWS account %s" % aws_account["Publisher"])
@@ -98,7 +104,16 @@ class MetricExporter:
     def query_aws_cost_explorer(self, aws_client, group_by, tag_filters=None):
         results = list()
         end_date = datetime.today()
-        start_date = end_date - relativedelta(days=1)
+        
+        # Set start date based on granularity
+        if self.granularity == "DAILY":
+            start_date = end_date - relativedelta(days=1)
+        elif self.granularity == "MONTHLY":
+            # First day of current month for month-to-date
+            start_date = datetime(end_date.year, end_date.month, 1)
+        else:
+            # Default to daily if granularity is not recognized
+            start_date = end_date - relativedelta(days=1)
 
         # Keep the 'groups' code as specified
         groups = list()
@@ -138,8 +153,8 @@ class MetricExporter:
                     "End": end_date.strftime("%Y-%m-%d"),
                 },
                 Filter=combined_filter,
-                Granularity="DAILY",
-                Metrics=[self.metric_type],  # Use dynamic metrics
+                Granularity=self.granularity,
+                Metrics=[self.metric_type], # Use dynamic metrics
                 GroupBy=groups,
                 **({"NextPageToken": next_page_token} if next_page_token else {}),
             )
@@ -188,7 +203,7 @@ class MetricExporter:
         for result in cost_response:
             if not self.group_by["enabled"]:
                 cost = float(result["Total"][self.metric_type]["Amount"])
-                self.aws_daily_cost_usd.labels(**aws_account, ChargeType="Usage").set(cost)
+                self.cost_metric.labels(**aws_account, ChargeType="Usage").set(cost)
             else:
                 merged_minor_cost = 0
                 for item in result["Groups"]:
@@ -219,7 +234,7 @@ class MetricExporter:
                     ):
                         merged_minor_cost += cost
                     else:
-                        self.aws_daily_cost_usd.labels(**aws_account, **group_key_values, ChargeType="Usage").set(cost)
+                        self.cost_metric.labels(**aws_account, **group_key_values, ChargeType="Usage").set(cost)
 
                 if merged_minor_cost > 0:
                     group_key_values = dict()
@@ -235,6 +250,6 @@ class MetricExporter:
                                 group_key_values[alias["label"]] = alias_value
                         else:
                             group_key_values[group["label_name"]] = merged_value
-                    self.aws_daily_cost_usd.labels(**aws_account, **group_key_values, ChargeType="Usage").set(
+                    self.cost_metric.labels(**aws_account, **group_key_values, ChargeType="Usage").set(
                         merged_minor_cost
                     )
