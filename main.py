@@ -62,7 +62,7 @@ def validate_configs(config):
         "Tax",
         "Usage",
     ]
-    
+
     valid_granularity_types = [
         "DAILY",
         "MONTHLY",
@@ -133,7 +133,7 @@ def validate_configs(config):
                 f"Invalid granularity: {config_metric['granularity']}. It must be one of {', '.join(valid_granularity_types)}."
             )
             sys.exit(1)
-            
+
         # Validate metric_type
         if config_metric["metric_type"] not in valid_metric_types:
             logging.error(
@@ -189,9 +189,10 @@ def main(config):
             metric_name=config_metric["metric_name"],
             group_by=config_metric["group_by"],
             metric_type=config_metric["metric_type"],
+            metric_description=config_metric.get("metric_description", None),
             record_types=config_metric.get("record_types", ["Usage"]),
             tag_filters=config_metric.get("tag_filters", None),
-            granularity=config_metric.get("granularity", "DAILY")
+            granularity=config_metric.get("granularity", "DAILY"),
         )
         metric_exporters.append(metric)
 
