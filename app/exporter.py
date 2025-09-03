@@ -34,7 +34,7 @@ class MetricExporter:
         self.group_by = group_by
         self.metric_type = metric_type  # Store metrics
         self.record_types = record_types
-        self.tag_filters = tag_filters # Store tag filters
+        self.tag_filters = tag_filters  # Store tag filters
         self.granularity = granularity
         self.dimension_alias = {}  # Store dimension value alias per group
 
@@ -65,7 +65,7 @@ class MetricExporter:
         metric_description = f"{self.granularity.lower().capitalize()} cost of an AWS account in USD"
         if self.granularity == "MONTHLY":
             metric_description = "Month-to-date cost of an AWS account in USD"
-            
+
         self.cost_metric = Gauge(
             self.metric_name,
             metric_description,
@@ -103,11 +103,17 @@ class MetricExporter:
 
     def query_aws_cost_explorer(self, aws_client, group_by, tag_filters=None):
         results = list()
+        date_format = "%Y-%m-%d"
         end_date = datetime.today()
-        
+
         # Set start date based on granularity
-        if self.granularity == "DAILY":
+        if self.granularity == "HOURLY":
+            date_format = "%Y-%m-%dT%H:%M:%SZ"
+            start_date = end_date - relativedelta(seconds=self.polling_interval_seconds)
+
+        elif self.granularity == "DAILY":
             start_date = end_date - relativedelta(days=1)
+
         elif self.granularity == "MONTHLY":
             # First day of current month for month-to-date
             start_date = datetime(end_date.year, end_date.month, 1)
@@ -149,12 +155,12 @@ class MetricExporter:
         while True:
             response = aws_client.get_cost_and_usage(
                 TimePeriod={
-                    "Start": start_date.strftime("%Y-%m-%d"),
-                    "End": end_date.strftime("%Y-%m-%d"),
+                    "Start": start_date.strftime(date_format),
+                    "End": end_date.strftime(date_format),
                 },
                 Filter=combined_filter,
                 Granularity=self.granularity,
-                Metrics=[self.metric_type], # Use dynamic metrics
+                Metrics=[self.metric_type],  # Use dynamic metrics
                 GroupBy=groups,
                 **({"NextPageToken": next_page_token} if next_page_token else {}),
             )

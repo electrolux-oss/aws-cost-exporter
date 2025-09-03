@@ -27,6 +27,7 @@ _ps: As the metric name indicate, the metric shows the daily costs in USD. `Dail
 
 The exporter supports different granularities for cost metrics:
 
+- **HOURLY**: Exports the Hourly cost over the `polling_interval_seconds` which must not exceed 14 days. Hourly granularity requires opt-in from the AWS Cost Explorer Settings page and will incur additional charges.
 - **DAILY**: Exports the cost for the previous day.
 - **MONTHLY**: Exports month-to-date costs (from the first day of the current month to now).
 
@@ -35,7 +36,7 @@ You can specify the granularity for each metric in the `exporter_config.yaml` fi
 ```yaml
 metrics:
   - metric_name: aws_daily_cost_usd
-    granularity: DAILY  # Valid values: DAILY, MONTHLY
+    granularity: DAILY  # Valid values: HOURLY, DAILY, MONTHLY. 
     # ... other configurations
 ```
 
