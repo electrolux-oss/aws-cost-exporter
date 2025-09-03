@@ -225,6 +225,8 @@ class MetricExporter:
                                 alias_value = alias["map"].get(value)
                                 if alias_value is not None:
                                     group_key_values[alias["label"]] = alias_value
+                                else:
+                                    group_key_values[alias["label"]] = ""
                             else:
                                 group_key_values[group["label_name"]] = value
 
