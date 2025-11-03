@@ -35,6 +35,7 @@ You can specify the granularity for each metric in the `exporter_config.yaml` fi
 ```yaml
 metrics:
   - metric_name: aws_daily_cost_usd
+    metric_description: Daily AWS Usage Cost
     granularity: DAILY  # Valid values: DAILY, MONTHLY
     # ... other configurations
 ```
