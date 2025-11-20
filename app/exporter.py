@@ -24,6 +24,7 @@ class MetricExporter:
         metric_description=None,
         record_types=None,
         tag_filters=None,  # Added tag_filters parameter
+        dimension_filters=None,  # Added dimension_filters parameter
         granularity="DAILY",
     ):
         self.polling_interval_seconds = polling_interval_seconds
@@ -37,6 +38,7 @@ class MetricExporter:
         self.metric_description = metric_description
         self.record_types = record_types
         self.tag_filters = tag_filters  # Store tag filters
+        self.dimension_filters = dimension_filters  # Store dimension filters
         self.granularity = granularity
         self.dimension_alias = {}  # Store dimension value alias per group
 
@@ -104,7 +106,7 @@ class MetricExporter:
 
         return assumed_role_object["Credentials"]
 
-    def query_aws_cost_explorer(self, aws_client, group_by, tag_filters=None):
+    def query_aws_cost_explorer(self, aws_client, group_by, tag_filters=None, dimension_filters=None):
         results = list()
         end_date = datetime.today()
 
@@ -127,13 +129,15 @@ class MetricExporter:
         # Build the base filter with RECORD_TYPE
         base_filter = {"Dimensions": {"Key": "RECORD_TYPE", "Values": self.record_types}}
 
+        # Collect all additional filters
+        additional_filters = []
+
         # Include tag filters if provided
         if tag_filters:
-            tag_filter_list = []
             for tag_filter in tag_filters:
                 tag_key = tag_filter["tag_key"]
                 tag_values = tag_filter["tag_values"]
-                tag_filter_list.append(
+                additional_filters.append(
                     {
                         "Tags": {
                             "Key": tag_key,
@@ -143,8 +147,25 @@ class MetricExporter:
                     }
                 )
 
-            # Combine the base filter and tag filters using 'And'
-            combined_filter = {"And": [base_filter] + tag_filter_list}
+        # Include dimension filters if provided
+        if dimension_filters:
+            for dimension_filter in dimension_filters:
+                dimension_key = dimension_filter["dimension_key"]
+                dimension_values = dimension_filter["dimension_values"]
+                match_options = dimension_filter.get("match_options", ["EQUALS"])
+                additional_filters.append(
+                    {
+                        "Dimensions": {
+                            "Key": dimension_key,
+                            "Values": dimension_values,
+                            "MatchOptions": match_options,
+                        }
+                    }
+                )
+
+        # Combine the base filter and additional filters using 'And'
+        if additional_filters:
+            combined_filter = {"And": [base_filter] + additional_filters}
         else:
             combined_filter = base_filter
 
@@ -196,11 +217,12 @@ class MetricExporter:
                     region_name="us-east-1",
                 )
 
-        # Pass tag_filters to query_aws_cost_explorer
+        # Pass tag_filters and dimension_filters to query_aws_cost_explorer
         cost_response = self.query_aws_cost_explorer(
             aws_client,
             self.group_by,
             self.tag_filters,  # Include tag filters
+            self.dimension_filters,  # Include dimension filters
         )
 
         for result in cost_response:

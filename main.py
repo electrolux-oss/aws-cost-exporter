@@ -168,6 +168,19 @@ def validate_configs(config):
                     )
                     sys.exit(1)
 
+        # Validate dimension_filters if present
+        if "dimension_filters" in config_metric:
+            dimension_filters = config_metric["dimension_filters"]
+            if not isinstance(dimension_filters, list):
+                logging.error("dimension_filters should be a list, check `exporter_config.yaml` as an example.")
+                sys.exit(1)
+            for dimension_filter in dimension_filters:
+                if not isinstance(dimension_filter["dimension_values"], list):
+                    logging.error(
+                        f"Values for dimension `{dimension_filter['dimension_key']}` should be a list, check `exporter_config.yaml` as an example."
+                    )
+                    sys.exit(1)
+
     # No need to repeat the validation loops; they have been consolidated above.
 
 
@@ -192,6 +205,7 @@ def main(config):
             metric_description=config_metric.get("metric_description", None),
             record_types=config_metric.get("record_types", ["Usage"]),
             tag_filters=config_metric.get("tag_filters", None),
+            dimension_filters=config_metric.get("dimension_filters", None),
             granularity=config_metric.get("granularity", "DAILY"),
         )
         metric_exporters.append(metric)
