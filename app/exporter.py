@@ -114,6 +114,9 @@ class MetricExporter:
         elif self.granularity == "MONTHLY":
             # First day of current month for month-to-date
             start_date = datetime(end_date.year, end_date.month, 1)
+            # Make tomorrow as the end_date as AWS does not like having the same `Start` and `End`
+            # This is fine as `end_date` is exclusive
+            end_date = end_date + relativedelta(days=1)
         else:
             # Default to daily if granularity is not recognized
             start_date = end_date - relativedelta(days=1)
