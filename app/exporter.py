@@ -21,6 +21,7 @@ class MetricExporter:
         group_by,
         targets,
         metric_type,
+        data_delay_days=0,
         metric_description=None,
         record_types=None,
         tag_filters=None,  # Added tag_filters parameter
@@ -34,6 +35,7 @@ class MetricExporter:
         self.aws_assumed_role_name = aws_assumed_role_name
         self.group_by = group_by
         self.metric_type = metric_type  # Store metrics
+        self.data_delay_days = data_delay_days
         self.metric_description = metric_description
         self.record_types = record_types
         self.tag_filters = tag_filters  # Store tag filters
@@ -106,16 +108,16 @@ class MetricExporter:
 
     def query_aws_cost_explorer(self, aws_client, group_by, tag_filters=None):
         results = list()
-        end_date = datetime.today()
+        end_date = datetime.today() - relativedelta(days=self.data_delay_days)
 
         # Set start date based on granularity
         if self.granularity == "DAILY":
             start_date = end_date - relativedelta(days=1)
         elif self.granularity == "MONTHLY":
-            # First day of current month for month-to-date
+            # First day of month (relative to the delayed end_date) for month-to-date
             start_date = datetime(end_date.year, end_date.month, 1)
-            # Make tomorrow as the end_date as AWS does not like having the same `Start` and `End`
-            # This is fine as `end_date` is exclusive
+            # Add one day as AWS requires `End` > `Start`, and `End` is exclusive.
+            # This also makes month-to-date include the (delayed) current day.
             end_date = end_date + relativedelta(days=1)
         else:
             # Default to daily if granularity is not recognized

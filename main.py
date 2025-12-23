@@ -134,6 +134,17 @@ def validate_configs(config):
             )
             sys.exit(1)
 
+        # Validate data_delay_days (optional, default 0)
+        if "data_delay_days" not in config_metric:
+            config_metric["data_delay_days"] = 0
+        else:
+            delay = config_metric["data_delay_days"]
+            if not isinstance(delay, int) or delay < 0:
+                logging.error(
+                    f"Invalid data_delay_days for metric {config_metric['metric_name']}: {delay}. It must be a non-negative integer."
+                )
+                sys.exit(1)
+
         # Validate metric_type
         if config_metric["metric_type"] not in valid_metric_types:
             logging.error(
@@ -189,6 +200,7 @@ def main(config):
             metric_name=config_metric["metric_name"],
             group_by=config_metric["group_by"],
             metric_type=config_metric["metric_type"],
+            data_delay_days=config_metric.get("data_delay_days", 0),
             metric_description=config_metric.get("metric_description", None),
             record_types=config_metric.get("record_types", ["Usage"]),
             tag_filters=config_metric.get("tag_filters", None),
