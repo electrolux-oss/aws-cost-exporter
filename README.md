@@ -37,6 +37,7 @@ metrics:
   - metric_name: aws_daily_cost_usd
     metric_description: Daily AWS Usage Cost
     granularity: DAILY  # Valid values: DAILY, MONTHLY
+    data_delay_days: 0  # Optional. Query N days in arrears (useful for eventual consistency, e.g. Savings Plans amortization)
     # ... other configurations
 ```
 
