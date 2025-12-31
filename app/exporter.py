@@ -37,7 +37,6 @@ class MetricExporter:
         self.metric_type = metric_type  # Store metrics
         self.data_delay_days = data_delay_days
         self.metric_description = metric_description
-        self.record_types = record_types
         self.tag_filters = tag_filters  # Store tag filters
         self.granularity = granularity
         self.dimension_alias = {}  # Store dimension value alias per group
@@ -48,10 +47,15 @@ class MetricExporter:
         # For now we only support exporting one type of cost (Usage)
         self.labels.add("ChargeType")
 
-        # If record_types is not provided, use the default value
+        # If record_types is not provided, determine default based on metric_type
+        # For amortized cost types, we need to include additional record types to get accurate values
         if record_types is None:
-            record_types = []
-            record_types.append("Usage")
+            self.record_types = self._get_default_record_types(metric_type)
+            logging.info(
+                f"Using default record_types for {metric_type}: {self.record_types}"
+            )
+        else:
+            self.record_types = record_types
 
         if group_by["enabled"]:
             for group in group_by["groups"]:
@@ -76,6 +80,36 @@ class MetricExporter:
             self.metric_description,
             self.labels,
         )
+
+    def _get_default_record_types(self, metric_type):
+        """
+        Returns appropriate default record types based on the metric type.
+
+        For AmortizedCost and NetAmortizedCost, we need to include Savings Plan and
+        Reserved Instance related record types to get accurate amortized values.
+        Without these, amortized costs will appear the same as unblended costs.
+
+        See: https://github.com/electrolux-oss/aws-cost-exporter/issues/27
+        See: https://github.com/electrolux-oss/aws-cost-exporter/issues/30
+        """
+        # Base record types for all metric types
+        base_types = ["Usage"]
+
+        # Amortized cost types need additional record types for accurate calculation
+        amortized_types = ["AmortizedCost", "NetAmortizedCost"]
+
+        if metric_type in amortized_types:
+            # Include Savings Plan and Reserved Instance related record types
+            # These are required to properly calculate amortized costs
+            return base_types + [
+                "SavingsPlanCoveredUsage",
+                "SavingsPlanRecurringFee",
+                "SavingsPlanUpfrontFee",
+                "DiscountedUsage",  # For Reserved Instance usage
+                "RIFee",  # For Reserved Instance fees
+            ]
+
+        return base_types
 
     def run_metrics(self):
         # Every time we clear up all the existing labels before setting new ones

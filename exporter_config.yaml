@@ -39,6 +39,9 @@ metrics:
     metric_type: AmortizedCost
     # the following `record_types` part is optional and can be removed if there is no filter by record types
     # ref: https://docs.aws.amazon.com/awsaccountbilling/latest/aboutv2/manage-cost-categories.html#cost-categories-terms
+    # NOTE: If not specified, defaults are automatically determined based on metric_type:
+    #   - For AmortizedCost/NetAmortizedCost: Usage, SavingsPlanCoveredUsage, SavingsPlanRecurringFee, SavingsPlanUpfrontFee, DiscountedUsage, RIFee
+    #   - For other metric types: Usage
     record_types:
       - Usage
       - SavingsPlanCoveredUsage
