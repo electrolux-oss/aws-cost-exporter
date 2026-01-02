@@ -202,7 +202,7 @@ def main(config):
             metric_type=config_metric["metric_type"],
             data_delay_days=config_metric.get("data_delay_days", 0),
             metric_description=config_metric.get("metric_description", None),
-            record_types=config_metric.get("record_types", ["Usage"]),
+            record_types=config_metric.get("record_types", None),
             tag_filters=config_metric.get("tag_filters", None),
             granularity=config_metric.get("granularity", "DAILY"),
         )
