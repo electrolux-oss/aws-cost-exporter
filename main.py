@@ -195,7 +195,9 @@ def validate_configs(config):
                     )
                     sys.exit(1)
 
-        # Validate dimension_filters if present (new validation)
+        # Validate dimension_filters if present
+        # dimension_filters allow filtering by AWS dimensions like LINKED_ACCOUNT, SERVICE, etc.
+        # When iterate=true, makes N API requests and adds dimension values as labels
         if "dimension_filters" in config_metric:
             dimension_filters = config_metric["dimension_filters"]
             if not isinstance(dimension_filters, list):
