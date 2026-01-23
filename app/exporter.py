@@ -70,9 +70,7 @@ class MetricExporter:
         # For amortized cost types, we need to include additional record types to get accurate values
         if record_types is None:
             self.record_types = self._get_default_record_types(metric_type)
-            logging.info(
-                f"Using default record_types for {metric_type}: {self.record_types}"
-            )
+            logging.info(f"Using default record_types for {metric_type}: {self.record_types}")
         else:
             self.record_types = record_types
 
@@ -177,10 +175,7 @@ class MetricExporter:
                 time.sleep(ITERATE_DELAY_SECONDS)
 
             # Build dimension filter for this specific value
-            current_filters = self.static_filters + [{
-                "key": iterate_filter["key"],
-                "values": [value]
-            }]
+            current_filters = self.static_filters + [{"key": iterate_filter["key"], "values": [value]}]
 
             # Build extra labels from iterate filter
             # These labels are added to each metric with the current iteration value
@@ -220,11 +215,7 @@ class MetricExporter:
         for result in cost_response:
             if not self.group_by["enabled"]:
                 cost = float(result["Total"][self.metric_type]["Amount"])
-                self.cost_metric.labels(
-                    **aws_account,
-                    **extra_labels,
-                    ChargeType="Usage"
-                ).set(cost)
+                self.cost_metric.labels(**aws_account, **extra_labels, ChargeType="Usage").set(cost)
             else:
                 merged_minor_cost = 0
                 for item in result["Groups"]:
@@ -258,10 +249,7 @@ class MetricExporter:
                         merged_minor_cost += cost
                     else:
                         self.cost_metric.labels(
-                            **aws_account,
-                            **extra_labels,
-                            **group_key_values,
-                            ChargeType="Usage"
+                            **aws_account, **extra_labels, **group_key_values, ChargeType="Usage"
                         ).set(cost)
 
                 if merged_minor_cost > 0:
@@ -278,12 +266,9 @@ class MetricExporter:
                                 group_key_values[alias["label"]] = alias_value
                         else:
                             group_key_values[group["label_name"]] = merged_value
-                    self.cost_metric.labels(
-                        **aws_account,
-                        **extra_labels,
-                        **group_key_values,
-                        ChargeType="Usage"
-                    ).set(merged_minor_cost)
+                    self.cost_metric.labels(**aws_account, **extra_labels, **group_key_values, ChargeType="Usage").set(
+                        merged_minor_cost
+                    )
 
     def _get_aws_client(self, aws_account):
         """
@@ -344,8 +329,8 @@ class MetricExporter:
         Args:
             aws_client: boto3 Cost Explorer client
             group_by: GroupBy configuration from the metric config
-            tag_filters: Optional list of tag filters (existing functionality)
-            dimension_filters: Optional list of dimension filters (new functionality)
+            tag_filters: Optional list of tag filters
+            dimension_filters: Optional list of dimension filters
 
         Returns:
             List of ResultsByTime from AWS Cost Explorer response
@@ -391,16 +376,18 @@ class MetricExporter:
                     }
                 )
 
-        # Include dimension filters if provided (new logic, parallel to tag_filters)
+        # Include dimension filters if provided
         # Dimension filters allow filtering by AWS dimensions like LINKED_ACCOUNT, SERVICE, etc.
         if dimension_filters:
             for dim_filter in dimension_filters:
-                additional_filters.append({
-                    "Dimensions": {
-                        "Key": dim_filter["key"],
-                        "Values": dim_filter["values"],
+                additional_filters.append(
+                    {
+                        "Dimensions": {
+                            "Key": dim_filter["key"],
+                            "Values": dim_filter["values"],
+                        }
                     }
-                })
+                )
 
         # Combine the base filter and additional filters using 'And'
         if additional_filters:

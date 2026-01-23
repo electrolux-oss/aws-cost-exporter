@@ -203,7 +203,12 @@ def validate_configs(config):
             if not isinstance(dimension_filters, list):
                 logging.error("dimension_filters should be a list.")
                 sys.exit(1)
-            
+
+            iterate_filters = [df for df in dimension_filters if df.get("iterate", False)]
+            if len(iterate_filters) > 1:
+                logging.error("Only one dimension_filter with iterate=true is supported at a time.")
+                sys.exit(1)
+
             for df in dimension_filters:
                 # Required fields
                 if "key" not in df:
@@ -218,13 +223,13 @@ def validate_configs(config):
                 if len(df["values"]) == 0:
                     logging.error(f"dimension_filter 'values' cannot be empty for key '{df['key']}'!")
                     sys.exit(1)
-                
+
                 # Validate dimension key
                 if df["key"] not in valid_dimension_keys:
                     logging.warning(
                         f"Unknown dimension key: {df['key']}. Valid keys are: {', '.join(valid_dimension_keys)}"
                     )
-                
+
                 # Validate iterate mode
                 if df.get("iterate", False):
                     # iterate=true requires label_name
@@ -233,7 +238,7 @@ def validate_configs(config):
                             f"dimension_filter with iterate=true must have 'label_name' for key '{df['key']}'!"
                         )
                         sys.exit(1)
-                    
+
                     # Check label_name uniqueness
                     if df["label_name"] in group_label_names:
                         logging.error(
@@ -246,27 +251,26 @@ def validate_configs(config):
                         )
                         sys.exit(1)
                     group_label_names.add(df["label_name"])
-                    
+
                     # Validate alias if present
                     if "alias" in df:
                         if "label_name" not in df["alias"]:
-                            logging.error(
-                                f"dimension_filter alias must have 'label_name' for key '{df['key']}'!"
-                            )
+                            logging.error(f"dimension_filter alias must have 'label_name' for key '{df['key']}'!")
                             sys.exit(1)
                         if "map" not in df["alias"]:
-                            logging.error(
-                                f"dimension_filter alias must have 'map' for key '{df['key']}'!"
-                            )
+                            logging.error(f"dimension_filter alias must have 'map' for key '{df['key']}'!")
                             sys.exit(1)
                         if not isinstance(df["alias"]["map"], dict):
-                            logging.error(
-                                f"dimension_filter alias 'map' must be a dictionary for key '{df['key']}'!"
-                            )
+                            logging.error(f"dimension_filter alias 'map' must be a dictionary for key '{df['key']}'!")
                             sys.exit(1)
                         if df["alias"]["label_name"] in group_label_names:
                             logging.error(
                                 f"dimension_filter alias label_name '{df['alias']['label_name']}' conflicts with existing labels!"
+                            )
+                            sys.exit(1)
+                        if df["alias"]["label_name"] in labels:
+                            logging.error(
+                                f"dimension_filter alias label_name '{df['alias']['label_name']}' conflicts with AWS account labels!"
                             )
                             sys.exit(1)
                         if df["label_name"] == df["alias"]["label_name"]:
