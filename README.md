@@ -41,6 +41,40 @@ metrics:
     # ... other configurations
 ```
 
+## Dimension Filters
+
+You can filter by AWS Cost Explorer dimensions (e.g. `SERVICE`, `LINKED_ACCOUNT`) using `dimension_filters`.
+
+Notes:
+- Only one `dimension_filter` with `iterate: true` is supported at a time.
+- `alias.label_name` must not conflict with any `target_aws_accounts` label (e.g. `Publisher`).
+
+Example:
+
+```yaml
+metrics:
+  - metric_name: aws_daily_cost_usd
+    group_by:
+      enabled: true
+      groups:
+        - type: DIMENSION
+          key: SERVICE
+          label_name: ServiceName
+    metric_type: AmortizedCost
+    dimension_filters:
+      - key: SERVICE
+        values: [AmazonEC2, AmazonS3]
+      - key: LINKED_ACCOUNT
+        values: ["123456789012", "234567890123"]
+        iterate: true
+        label_name: LinkedAccount
+        alias:
+          label_name: LinkedAccountAlias
+          map:
+            "123456789012": "prod"
+            "234567890123": "dev"
+```
+
 ## How Does This Work
 
 AWS Cost Metrics Exporter fetches cost data from a list of AWS accounts, each of which provides a necessary IAM role for the exporter. It regularly queries the AWS [GetCostAndUsage](https://docs.aws.amazon.com/aws-cost-management/latest/APIReference/API_GetCostAndUsage.html) to get the whole AWS account's cost. It is configurable to have different queries, such as group by services and tags, merge minor cost to one single category, etc. The following figure describes how AWS Cost Metrics Exporter works.

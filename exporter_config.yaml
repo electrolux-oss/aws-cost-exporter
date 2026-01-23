@@ -85,6 +85,27 @@ metrics:
       - tag_key: EnvironmentName
         tag_values:
           - dev
+    # the following `dimension_filters` part is optional and can be removed if there is no filter by dimensions
+    # NOTE: Only one dimension_filter with iterate=true is supported at a time.
+    # NOTE: alias.label_name must not conflict with any target_aws_accounts label (e.g. Publisher).
+    dimension_filters:
+      # Static filter: applied in a single request (no extra labels added)
+      - key: SERVICE
+        values:
+          - AmazonEC2
+          - AmazonS3
+      # Iterate filter: makes one request per value and adds the value as a label
+      - key: LINKED_ACCOUNT
+        values:
+          - "123456789012"
+          - "234567890123"
+        iterate: true
+        label_name: LinkedAccount
+        alias: # optional - adds an alias label for the iterated value
+          label_name: LinkedAccountAlias
+          map:
+            "123456789012": "prod"
+            "234567890123": "dev"
 
 target_aws_accounts:
   # here defines a list of target AWS accounts
