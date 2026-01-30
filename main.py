@@ -68,6 +68,22 @@ def validate_configs(config):
         "MONTHLY",
     ]
 
+    # Valid dimension keys for dimension_filters
+    valid_dimension_keys = [
+        "AZ",
+        "INSTANCE_TYPE",
+        "LEGAL_ENTITY_NAME",
+        "LINKED_ACCOUNT",
+        "OPERATION",
+        "PLATFORM",
+        "PURCHASE_TYPE",
+        "REGION",
+        "SERVICE",
+        "TENANCY",
+        "RECORD_TYPE",
+        "USAGE_TYPE",
+    ]
+
     if len(config["target_aws_accounts"]) == 0:
         logging.error("There should be at least one target AWS account defined in the config!")
         sys.exit(1)
@@ -179,14 +195,96 @@ def validate_configs(config):
                     )
                     sys.exit(1)
 
-    # No need to repeat the validation loops; they have been consolidated above.
+        # Validate dimension_filters if present
+        # dimension_filters allow filtering by AWS dimensions like LINKED_ACCOUNT, SERVICE, etc.
+        # When iterate=true, makes N API requests and adds dimension values as labels
+        if "dimension_filters" in config_metric:
+            dimension_filters = config_metric["dimension_filters"]
+            if not isinstance(dimension_filters, list):
+                logging.error("dimension_filters should be a list.")
+                sys.exit(1)
+
+            iterate_filters = [df for df in dimension_filters if df.get("iterate", False)]
+            if len(iterate_filters) > 1:
+                logging.error("Only one dimension_filter with iterate=true is supported at a time.")
+                sys.exit(1)
+
+            for df in dimension_filters:
+                # Required fields
+                if "key" not in df:
+                    logging.error("dimension_filter must have 'key' field!")
+                    sys.exit(1)
+                if "values" not in df:
+                    logging.error("dimension_filter must have 'values' field!")
+                    sys.exit(1)
+                if not isinstance(df["values"], list):
+                    logging.error(f"dimension_filter 'values' must be a list for key '{df['key']}'!")
+                    sys.exit(1)
+                if len(df["values"]) == 0:
+                    logging.error(f"dimension_filter 'values' cannot be empty for key '{df['key']}'!")
+                    sys.exit(1)
+
+                # Validate dimension key
+                if df["key"] not in valid_dimension_keys:
+                    logging.warning(
+                        f"Unknown dimension key: {df['key']}. Valid keys are: {', '.join(valid_dimension_keys)}"
+                    )
+
+                # Validate iterate mode
+                if df.get("iterate", False):
+                    # iterate=true requires label_name
+                    if "label_name" not in df:
+                        logging.error(
+                            f"dimension_filter with iterate=true must have 'label_name' for key '{df['key']}'!"
+                        )
+                        sys.exit(1)
+
+                    # Check label_name uniqueness
+                    if df["label_name"] in group_label_names:
+                        logging.error(
+                            f"dimension_filter label_name '{df['label_name']}' conflicts with existing labels!"
+                        )
+                        sys.exit(1)
+                    if df["label_name"] in labels:
+                        logging.error(
+                            f"dimension_filter label_name '{df['label_name']}' conflicts with AWS account labels!"
+                        )
+                        sys.exit(1)
+                    group_label_names.add(df["label_name"])
+
+                    # Validate alias if present
+                    if "alias" in df:
+                        if "label_name" not in df["alias"]:
+                            logging.error(f"dimension_filter alias must have 'label_name' for key '{df['key']}'!")
+                            sys.exit(1)
+                        if "map" not in df["alias"]:
+                            logging.error(f"dimension_filter alias must have 'map' for key '{df['key']}'!")
+                            sys.exit(1)
+                        if not isinstance(df["alias"]["map"], dict):
+                            logging.error(f"dimension_filter alias 'map' must be a dictionary for key '{df['key']}'!")
+                            sys.exit(1)
+                        if df["alias"]["label_name"] in group_label_names:
+                            logging.error(
+                                f"dimension_filter alias label_name '{df['alias']['label_name']}' conflicts with existing labels!"
+                            )
+                            sys.exit(1)
+                        if df["alias"]["label_name"] in labels:
+                            logging.error(
+                                f"dimension_filter alias label_name '{df['alias']['label_name']}' conflicts with AWS account labels!"
+                            )
+                            sys.exit(1)
+                        if df["label_name"] == df["alias"]["label_name"]:
+                            logging.error(
+                                f"dimension_filter label_name and alias label_name cannot be the same for key '{df['key']}'!"
+                            )
+                            sys.exit(1)
+                        group_label_names.add(df["alias"]["label_name"])
 
 
 def main(config):
     metric_exporters = []
     for config_metric in config["metrics"]:
         # Get the aws credentials with default empty string to make it optional
-        # This is because boto3 has a default credential chain that will be used if no credentials are provided
         aws_access_key = config.get("aws_access_key", "")
         aws_access_secret = config.get("aws_access_secret", "")
         aws_assumed_role_name = config.get("aws_assumed_role_name", "")
@@ -204,6 +302,7 @@ def main(config):
             metric_description=config_metric.get("metric_description", None),
             record_types=config_metric.get("record_types", None),
             tag_filters=config_metric.get("tag_filters", None),
+            dimension_filters=config_metric.get("dimension_filters", None),  # New parameter
             granularity=config_metric.get("granularity", "DAILY"),
         )
         metric_exporters.append(metric)
