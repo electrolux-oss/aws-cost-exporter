@@ -8,6 +8,7 @@ import os
 import signal
 import sys
 import time
+from datetime import datetime, timedelta
 
 from envyaml import EnvYAML
 from prometheus_client import start_http_server
@@ -17,6 +18,23 @@ from app.exporter import MetricExporter
 
 def handle_sigint(sig, frame):
     exit()
+
+
+def get_sleep_duration(polling_interval_seconds):
+    """
+    Calculate the sleep duration ensuring it doesn't cross midnight.
+
+    This prevents scraping metrics with data from the previous day by ensuring
+    the polling wakes up at or before midnight when the next poll would otherwise
+    cross into the next day.
+    """
+    now = datetime.now()
+    midnight = datetime.combine(now.date() + timedelta(days=1), datetime.min.time())
+    seconds_until_midnight = (midnight - now).total_seconds()
+
+    # Use the smaller of polling interval or time until midnight
+    # This ensures we wake up at midnight if the poll would otherwise cross days
+    return min(polling_interval_seconds, seconds_until_midnight)
 
 
 def get_configs():
@@ -311,7 +329,9 @@ def main(config):
     while True:
         for exporter in metric_exporters:
             exporter.run_metrics()
-        time.sleep(config["polling_interval_seconds"])
+        sleep_duration = get_sleep_duration(config["polling_interval_seconds"])
+        logging.info(f"Sleeping for {sleep_duration:.0f} seconds (configured: {config['polling_interval_seconds']}s)")
+        time.sleep(sleep_duration)
 
 
 if __name__ == "__main__":
