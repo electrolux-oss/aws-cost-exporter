@@ -97,6 +97,29 @@ AWS Cost Metrics Exporter fetches cost data from a list of AWS accounts, each of
 
 This exporter is implemented with [AWS Boto3 SDK](https://boto3.amazonaws.com/v1/documentation/api/latest/index.html) and it follows the order in which Boto3 searches for credentials (see the official docs [here](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/credentials.html#configuring-credentials)). The only difference is that, when `aws_access_key` and `aws_secret_key` are defined in the `exporter_config.yaml` file, the exporter will use these credentials and authenticate as an IAM user.
 
+## AWS Region and Partition
+
+Configure the exporter with environment variables:
+
+| Variable | Purpose | Default |
+| --- | --- | --- |
+| `AWS_REGION` | Region for Cost Explorer and STS clients; takes precedence over `AWS_DEFAULT_REGION`. | `AWS_DEFAULT_REGION`, then `us-east-1` |
+| `AWS_DEFAULT_REGION` | Region used when `AWS_REGION` is unset or empty. | `us-east-1` |
+| `AWS_PARTITION` | Partition in assumed-role ARNs, such as `aws`, `aws-cn`, or `aws-us-gov`. This is an exporter setting, not a standard Boto3 environment variable. | `aws` |
+
+For example, to configure the standard AWS partition:
+
+```sh
+export AWS_REGION=us-east-1
+export AWS_PARTITION=aws
+```
+
+The exporter then assumes roles using `arn:aws:iam::<account_id>:role/<aws_assumed_role_name>`.
+Set both the region and partition for your deployment; the partition is not inferred from the region.
+Choose a region where Cost Explorer is available for the account. These settings do not enable
+Cost Explorer in partitions or regions where AWS does not provide it.
+With no variables set, Cost Explorer continues to use `us-east-1` and role ARNs use `aws`.
+
 ## Setup AWS IAM User, Role, and Policy
 
 Note that if there is a list of AWS accounts for cost data collection, only **ONE** user needs to be created. This user is usually created in the AWS account where the exporter is deployed (an EKS cluster). This can be done from the AWS console - IAM portal or by terraform code.
