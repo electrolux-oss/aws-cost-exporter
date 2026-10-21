@@ -46,7 +46,7 @@ class MetricExporter:
         self.aws_access_secret = aws_access_secret
         self.aws_assumed_role_name = aws_assumed_role_name
         self.aws_region = os.getenv("AWS_REGION") or os.getenv("AWS_DEFAULT_REGION") or "us-east-1"
-        self.aws_partition = os.getenv("AWS_PARTITION") or "aws"
+        self.aws_partition = boto3.Session().get_partition_for_region(self.aws_region)
         self.group_by = group_by
         self.data_delay_days = data_delay_days
         self.hourly_time_range_hours = hourly_time_range_hours

@@ -105,20 +105,38 @@ Configure the exporter with environment variables:
 | --- | --- | --- |
 | `AWS_REGION` | Region for Cost Explorer and STS clients; takes precedence over `AWS_DEFAULT_REGION`. | `AWS_DEFAULT_REGION`, then `us-east-1` |
 | `AWS_DEFAULT_REGION` | Region used when `AWS_REGION` is unset or empty. | `us-east-1` |
-| `AWS_PARTITION` | Partition in assumed-role ARNs, such as `aws`, `aws-cn`, or `aws-us-gov`. This is an exporter setting, not a standard Boto3 environment variable. | `aws` |
 
-For example, to configure the standard AWS partition:
+The exporter derives the partition for assumed-role ARNs from the selected region using Boto3.
+For example, to configure the China partition:
 
 ```sh
-export AWS_REGION=us-east-1
-export AWS_PARTITION=aws
+export AWS_REGION=cn-northwest-1
 ```
 
-The exporter then assumes roles using `arn:aws:iam::<account_id>:role/<aws_assumed_role_name>`.
-Set both the region and partition for your deployment; the partition is not inferred from the region.
-Choose a region where Cost Explorer is available for the account. These settings do not enable
-Cost Explorer in partitions or regions where AWS does not provide it.
-With no variables set, Cost Explorer continues to use `us-east-1` and role ARNs use `aws`.
+The exporter then assumes roles using `arn:aws-cn:iam::<account_id>:role/<aws_assumed_role_name>`.
+No separate partition setting is needed. With no region variables set, clients use `us-east-1`
+and role ARNs use `aws`.
+
+ECS sets region environment variables automatically; EKS can inject them depending on the pod's
+identity configuration. These defaults can be used when targeting the same partition. To target
+a different partition, explicitly set `AWS_REGION` to a region in that partition and provide
+credentials valid for it. IAM roles cannot be assumed across partitions.
+
+Boto3 selects the Cost Explorer endpoint for the configured region and partition. For example,
+commercial regions such as `us-west-1` resolve to `ce.us-east-1.amazonaws.com`; this does not
+mean Cost Explorer only returns costs incurred in `us-east-1`. To restrict costs to a particular
+region, add a `REGION` dimension filter to the metric configuration in `exporter_config.yaml`:
+
+```yaml
+dimension_filters:
+  - key: REGION
+    values: [us-west-1]
+```
+
+The selected partition must provide Cost Explorer for the target account. Region selection
+does not enable unavailable services. For GovCloud costs, use the associated commercial
+account's credentials and a commercial client region, as described in the
+[AWS GovCloud billing documentation](https://docs.aws.amazon.com/govcloud-us/latest/UserGuide/usage-and-payment.html).
 
 ## Setup AWS IAM User, Role, and Policy
 
