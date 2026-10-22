@@ -3,6 +3,7 @@
 # Filename: exporter.py
 
 import logging
+import os
 import time
 from datetime import datetime, timezone
 
@@ -44,6 +45,8 @@ class MetricExporter:
         self.aws_access_key = aws_access_key
         self.aws_access_secret = aws_access_secret
         self.aws_assumed_role_name = aws_assumed_role_name
+        self.aws_region = os.getenv("AWS_REGION") or os.getenv("AWS_DEFAULT_REGION") or "us-east-1"
+        self.aws_partition = boto3.Session().get_partition_for_region(self.aws_region)
         self.group_by = group_by
         self.data_delay_days = data_delay_days
         self.hourly_time_range_hours = hourly_time_range_hours
@@ -331,7 +334,7 @@ class MetricExporter:
                 aws_access_key_id=aws_credentials["AccessKeyId"],
                 aws_secret_access_key=aws_credentials["SecretAccessKey"],
                 aws_session_token=aws_credentials["SessionToken"],
-                region_name="us-east-1",
+                region_name=self.aws_region,
             )
         else:
             if self.aws_access_key and self.aws_access_secret:
@@ -339,23 +342,24 @@ class MetricExporter:
                     "ce",
                     aws_access_key_id=self.aws_access_key,
                     aws_secret_access_key=self.aws_access_secret,
-                    region_name="us-east-1",
+                    region_name=self.aws_region,
                 )
             else:
-                return boto3.client("ce", region_name="us-east-1")
+                return boto3.client("ce", region_name=self.aws_region)
 
     def get_aws_account_session_via_iam_role(self, account_id):
         if self.aws_access_key and self.aws_access_secret:
             sts_client = boto3.client(
                 "sts",
+                region_name=self.aws_region,
                 aws_access_key_id=self.aws_access_key,
                 aws_secret_access_key=self.aws_access_secret,
             )
         else:
-            sts_client = boto3.client("sts")
+            sts_client = boto3.client("sts", region_name=self.aws_region)
 
         assumed_role_object = sts_client.assume_role(
-            RoleArn=f"arn:aws:iam::{account_id}:role/{self.aws_assumed_role_name}",
+            RoleArn=f"arn:{self.aws_partition}:iam::{account_id}:role/{self.aws_assumed_role_name}",
             RoleSessionName="AssumeRoleSession1",
         )
 

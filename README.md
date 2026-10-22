@@ -97,6 +97,47 @@ AWS Cost Metrics Exporter fetches cost data from a list of AWS accounts, each of
 
 This exporter is implemented with [AWS Boto3 SDK](https://boto3.amazonaws.com/v1/documentation/api/latest/index.html) and it follows the order in which Boto3 searches for credentials (see the official docs [here](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/credentials.html#configuring-credentials)). The only difference is that, when `aws_access_key` and `aws_secret_key` are defined in the `exporter_config.yaml` file, the exporter will use these credentials and authenticate as an IAM user.
 
+## AWS Region and Partition
+
+Configure the exporter with environment variables:
+
+| Variable | Purpose | Default |
+| --- | --- | --- |
+| `AWS_REGION` | Region for Cost Explorer and STS clients; takes precedence over `AWS_DEFAULT_REGION`. | `AWS_DEFAULT_REGION`, then `us-east-1` |
+| `AWS_DEFAULT_REGION` | Region used when `AWS_REGION` is unset or empty. | `us-east-1` |
+
+The exporter derives the partition for assumed-role ARNs from the selected region using Boto3.
+For example, to configure the China partition:
+
+```sh
+export AWS_REGION=cn-northwest-1
+```
+
+The exporter then assumes roles using `arn:aws-cn:iam::<account_id>:role/<aws_assumed_role_name>`.
+No separate partition setting is needed. With no region variables set, clients use `us-east-1`
+and role ARNs use `aws`.
+
+ECS sets region environment variables automatically; EKS can inject them depending on the pod's
+identity configuration. These defaults can be used when targeting the same partition. To target
+a different partition, explicitly set `AWS_REGION` to a region in that partition and provide
+credentials valid for it. IAM roles cannot be assumed across partitions.
+
+Boto3 selects the Cost Explorer endpoint for the configured region and partition. For example,
+commercial regions such as `us-west-1` resolve to `ce.us-east-1.amazonaws.com`; this does not
+mean Cost Explorer only returns costs incurred in `us-east-1`. To restrict costs to a particular
+region, add a `REGION` dimension filter to the metric configuration in `exporter_config.yaml`:
+
+```yaml
+dimension_filters:
+  - key: REGION
+    values: [us-west-1]
+```
+
+The selected partition must provide Cost Explorer for the target account. Region selection
+does not enable unavailable services. For GovCloud costs, use the associated commercial
+account's credentials and a commercial client region, as described in the
+[AWS GovCloud billing documentation](https://docs.aws.amazon.com/govcloud-us/latest/UserGuide/usage-and-payment.html).
+
 ## Setup AWS IAM User, Role, and Policy
 
 Note that if there is a list of AWS accounts for cost data collection, only **ONE** user needs to be created. This user is usually created in the AWS account where the exporter is deployed (an EKS cluster). This can be done from the AWS console - IAM portal or by terraform code.
